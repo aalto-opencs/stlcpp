@@ -1,0 +1,4 @@
+a : Integer
+a = 5
+
+a

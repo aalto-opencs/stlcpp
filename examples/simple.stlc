@@ -1,0 +1,8 @@
+a : Integer
+a = 5
+
+sum2 : [Integer] -> Integer
+sum2 = fun xs : List Integer,
+    lcase xs of
+    | nil => 0
+    | cons x xs => x + sum2 xs

@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>stlc++ Playground</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css"
+        />
+        <style>
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                height: 100vh;
+                background-color: #f0f0f0;
+            }
+
+            /* Sidebar + main layout (desktop) */
+            #sidebar {
+                width: 250px;
+                background-color: #2c3e50;
+                color: white;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
+                flex: 0 0 250px;
+            }
+            #sidebar h2 {
+                margin-top: 0;
+                font-size: 1.2rem;
+                border-bottom: 1px solid #34495e;
+                padding-bottom: 10px;
+            }
+            .example-btn {
+                background: none;
+                border: none;
+                color: #ecf0f1;
+                padding: 10px;
+                text-align: left;
+                cursor: pointer;
+                transition: background 0.2s;
+                border-radius: 4px;
+                margin-bottom: 5px;
+            }
+            .example-btn:hover {
+                background-color: #34495e;
+            }
+
+            #main-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 20px;
+                gap: 12px;
+                min-width: 0; /* prevent overflow on narrow screens */
+            }
+
+            /* Top bar (visible on all screen sizes) */
+            #topbar {
+                display: flex;
+                position: sticky;
+                top: 0;
+                z-index: 5;
+                background: #e0e0e0;
+                border-bottom: 1px solid #ccc;
+                padding: 10px 12px;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            /* Desktop: the Examples toggle is only useful for the mobile drawer */
+            @media (min-width: 769px) {
+                #sidebar-toggle {
+                    display: none;
+                }
+            }
+            #sidebar-toggle {
+                appearance: none;
+                border: 1px solid #bbb;
+                background: #fff;
+                color: #333;
+                padding: 8px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+            }
+            #sidebar-toggle:active {
+                transform: translateY(1px);
+            }
+
+            /* File UI */
+            #filebar {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            #file-label {
+                font-weight: 700;
+                color: #333;
+            }
+            #file-name {
+                font-weight: 600;
+                color: #2c3e50;
+            }
+            #file-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .file-btn {
+                appearance: none;
+                border: 1px solid #bbb;
+                background: #fff;
+                color: #333;
+                padding: 8px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+            }
+            .file-btn:active {
+                transform: translateY(1px);
+            }
+            #file-open {
+                display: none;
+            }
+
+            /* Layout toggle UI */
+            #layout-toggle {
+                margin-left: 6px;
+            }
+
+            /* Overlay used when sidebar is open on mobile */
+            #sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 9;
+            }
+
+            /* Local Storage list styling (sidebar) */
+            #local-storage-list {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                margin-top: 8px;
+            }
+            .local-file-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 8px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                user-select: none;
+            }
+            .local-file-row:hover {
+                background-color: #34495e;
+            }
+            .local-file-row {
+                position: relative; /* anchor absolute action buttons */
+            }
+            .local-file-name {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                color: #ecf0f1;
+                font-weight: 600;
+
+                /* By default, don't reserve any space for actions so filenames
+                   have maximum room and aren't truncated unnecessarily. */
+                padding-right: 0;
+            }
+
+            /* Only reserve space for the action buttons while interacting with the row */
+            .local-file-row:hover .local-file-name,
+            .local-file-row:focus-within .local-file-name {
+                padding-right: 120px;
+            }
+            .local-file-actions {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                display: inline-flex;
+                gap: 6px;
+                visibility: hidden;
+            }
+            .local-file-row:hover .local-file-actions {
+                visibility: visible;
+            }
+            .local-file-action-btn {
+                appearance: none;
+                border: 1px solid #445b70;
+                background: rgba(255, 255, 255, 0.08);
+                color: #ecf0f1;
+                padding: 4px 8px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                line-height: 1.2;
+            }
+            .local-file-action-btn:hover {
+                background: rgba(255, 255, 255, 0.14);
+            }
+            .local-file-action-btn.danger {
+                border-color: rgba(231, 76, 60, 0.6);
+                background: rgba(231, 76, 60, 0.12);
+            }
+            .local-file-action-btn.danger:hover {
+                background: rgba(231, 76, 60, 0.22);
+            }
+
+            /* Split mode layout */
+            #panes {
+                flex: 1;
+                display: flex;
+                flex-direction: column; /* default: vertical */
+                min-height: 0;
+            }
+            body.layout-horizontal #panes {
+                flex-direction: row; /* horizontal split */
+            }
+            body.layout-horizontal #editor-container {
+                flex: 2;
+                min-width: 0;
+            }
+            body.layout-horizontal #output-container {
+                flex: 1;
+                min-width: 0;
+            }
+
+            /* Splitter bar */
+            #splitter {
+                flex: 0 0 auto;
+                background: #d0d0d0;
+                border-radius: 6px;
+            }
+            body.layout-horizontal #splitter {
+                width: 10px;
+                cursor: col-resize;
+                margin: 0 8px;
+            }
+            body:not(.layout-horizontal) #splitter {
+                height: 10px;
+                cursor: row-resize;
+                margin: 8px 0;
+            }
+            #splitter:hover {
+                background: #c2c2c2;
+            }
+            #splitter:active {
+                background: #b6b6b6;
+            }
+
+            #editor-container {
+                flex: 2;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                min-height: 40vh;
+                min-width: 0;
+            }
+            .CodeMirror {
+                height: 100%;
+                font-family: "Fira Code", monospace;
+                font-size: 14px;
+            }
+
+            /* Output: smaller by default, resizable via splitter */
+            #output-container {
+                flex: 1;
+                background: #222;
+                color: #0f0;
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                font-family: "Fira Code", monospace;
+                white-space: pre-wrap;
+                overflow: auto;
+                min-height: 120px;
+                min-width: 0;
+            }
+
+            #controls {
+                display: flex;
+                justify-content: flex-end;
+                padding: 10px;
+                background: #e0e0e0;
+                border-top: 1px solid #ccc;
+            }
+            #run-btn {
+                background-color: #27ae60;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: bold;
+                font-size: 1rem;
+                transition: background 0.2s;
+            }
+            #run-btn:hover {
+                background-color: #2ecc71;
+            }
+
+            /* Mobile: make sidebar a drawer + show topbar */
+            @media (max-width: 768px) {
+                body {
+                    display: block;
+                    height: 100vh;
+                    overflow: hidden;
+                }
+
+                #topbar {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                #main-content {
+                    height: calc(100vh - 92px);
+                    padding: 12px;
+                    gap: 12px;
+                    overflow: hidden;
+                }
+
+                #editor-container,
+                #output-container {
+                    border-radius: 8px;
+                }
+
+                #sidebar {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    height: 100vh;
+                    width: min(85vw, 320px);
+                    max-width: 320px;
+                    z-index: 10;
+                    transform: translateX(-110%);
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+                }
+
+                body.sidebar-open #sidebar {
+                    transform: translateX(0);
+                }
+
+                body.sidebar-open #sidebar-overlay {
+                    display: block;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="sidebar-overlay" aria-hidden="true"></div>
+
+        <div id="sidebar" aria-label="Examples sidebar">
+            <h2>stlc++ Examples</h2>
+            <div id="example-list">
+                <!-- Examples will be populated here -->
+            </div>
+
+            <h2>Local Storage</h2>
+            <div id="local-storage-list">
+                <!-- Local files will be populated here -->
+            </div>
+        </div>
+
+        <div id="main-content">
+            <div id="topbar">
+                <div id="filebar">
+                    <button
+                        id="sidebar-toggle"
+                        type="button"
+                        aria-controls="sidebar"
+                        aria-expanded="false"
+                    >
+                        Examples
+                    </button>
+
+                    <div id="file-label">File:</div>
+                    <div id="file-name">Unnamed</div>
+
+                    <div id="file-actions">
+                        <button id="file-new" class="file-btn" type="button">
+                            New
+                        </button>
+                        <button
+                            id="file-open-btn"
+                            class="file-btn"
+                            type="button"
+                        >
+                            Open
+                        </button>
+
+                        <button id="file-delete" class="file-btn" type="button">
+                            Delete
+                        </button>
+
+                        <button
+                            id="layout-toggle"
+                            class="file-btn"
+                            type="button"
+                            aria-pressed="false"
+                            title="Toggle horizontal/vertical layout"
+                        >
+                            Layout
+                        </button>
+
+                        <input id="file-open" type="file" accept=".stlc,.txt" />
+                    </div>
+                </div>
+            </div>
+
+            <div id="panes">
+                <div id="editor-container">
+                    <textarea id="code-editor"></textarea>
+                    <div id="controls">
+                        <button id="run-btn">Run Code (Ctrl+Enter)</button>
+                    </div>
+                </div>
+
+                <div
+                    id="splitter"
+                    role="separator"
+                    aria-orientation="horizontal"
+                    tabindex="0"
+                ></div>
+
+                <div id="output-container">Output will appear here...</div>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                const body = document.body;
+                const toggle = document.getElementById("sidebar-toggle");
+                const overlay = document.getElementById("sidebar-overlay");
+                const sidebar = document.getElementById("sidebar");
+
+                function setOpen(open) {
+                    body.classList.toggle("sidebar-open", open);
+                    if (toggle)
+                        toggle.setAttribute(
+                            "aria-expanded",
+                            open ? "true" : "false",
+                        );
+                    if (overlay)
+                        overlay.setAttribute(
+                            "aria-hidden",
+                            open ? "false" : "true",
+                        );
+                }
+
+                function isMobile() {
+                    return (
+                        window.matchMedia &&
+                        window.matchMedia("(max-width: 768px)").matches
+                    );
+                }
+
+                if (toggle) {
+                    toggle.addEventListener("click", function () {
+                        setOpen(!body.classList.contains("sidebar-open"));
+                    });
+                }
+
+                if (overlay) {
+                    overlay.addEventListener("click", function () {
+                        setOpen(false);
+                    });
+                }
+
+                document.addEventListener("keydown", function (e) {
+                    if (e.key === "Escape") setOpen(false);
+                });
+
+                if (sidebar) {
+                    sidebar.addEventListener("click", function (e) {
+                        if (!isMobile()) return;
+                        const target = e.target;
+                        if (
+                            target &&
+                            target.classList &&
+                            target.classList.contains("example-btn")
+                        ) {
+                            setOpen(false);
+                        }
+                    });
+                }
+
+                window.addEventListener("resize", function () {
+                    if (!isMobile()) setOpen(false);
+                });
+
+                // Layout toggle (horizontal vs vertical)
+                const layoutBtn = document.getElementById("layout-toggle");
+                const splitter = document.getElementById("splitter");
+                const panes = document.getElementById("panes");
+                const editorPane = document.getElementById("editor-container");
+                const outputPane = document.getElementById("output-container");
+
+                function isHorizontalLayout() {
+                    return body.classList.contains("layout-horizontal");
+                }
+
+                function setSplitterOrientation() {
+                    if (!splitter) return;
+                    splitter.setAttribute(
+                        "aria-orientation",
+                        isHorizontalLayout() ? "vertical" : "horizontal",
+                    );
+                }
+
+                function setPaneSizesFromSplit(ratio) {
+                    // ratio is editor share (0..1)
+                    if (!editorPane || !outputPane) return;
+                    const r = Math.max(0.15, Math.min(0.85, ratio));
+                    editorPane.style.flex = `0 0 ${Math.round(r * 1000) / 10}%`;
+                    outputPane.style.flex = `0 0 ${Math.round((1 - r) * 1000) / 10}%`;
+                }
+
+                function startDrag(e) {
+                    if (!splitter || !panes || !editorPane || !outputPane)
+                        return;
+
+                    e.preventDefault();
+
+                    const startX = e.clientX;
+                    const startY = e.clientY;
+                    const rect = panes.getBoundingClientRect();
+
+                    const onMove = (ev) => {
+                        const dx = ev.clientX - startX;
+                        const dy = ev.clientY - startY;
+
+                        if (isHorizontalLayout()) {
+                            const x = startX - rect.left + dx;
+                            const ratio = x / rect.width;
+                            setPaneSizesFromSplit(ratio);
+                        } else {
+                            const y = startY - rect.top + dy;
+                            const ratio = y / rect.height;
+                            setPaneSizesFromSplit(ratio);
+                        }
+                    };
+
+                    const onUp = () => {
+                        window.removeEventListener("mousemove", onMove);
+                        window.removeEventListener("mouseup", onUp);
+                        document.body.style.userSelect = "";
+                    };
+
+                    document.body.style.userSelect = "none";
+                    window.addEventListener("mousemove", onMove);
+                    window.addEventListener("mouseup", onUp);
+                }
+
+                if (splitter) {
+                    splitter.addEventListener("mousedown", startDrag);
+                }
+
+                function resetFlexToDefaults() {
+                    if (!editorPane || !outputPane) return;
+                    editorPane.style.flex = "";
+                    outputPane.style.flex = "";
+                }
+
+                if (layoutBtn) {
+                    layoutBtn.addEventListener("click", function () {
+                        const isHorizontal =
+                            body.classList.toggle("layout-horizontal");
+                        layoutBtn.setAttribute(
+                            "aria-pressed",
+                            isHorizontal ? "true" : "false",
+                        );
+
+                        // Reset sizes when switching modes for a sane default
+                        resetFlexToDefaults();
+                        setSplitterOrientation();
+                    });
+                }
+
+                setSplitterOrientation();
+            })();
+        </script>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/haskell/haskell.min.js"></script>
+        <script type="module" src="./index.js"></script>
+    </body>
+</html>

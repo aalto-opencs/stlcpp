@@ -1,0 +1,15 @@
+// API: function add : A -> A -> A
+string.add : [Char] -> [Char] -> [Char]
+string.add = concat Char
+
+int.add : Int -> Int -> Int
+int.add = fun x : Int, fun y : Int, add x y
+
+muln_helper.. : forall A, (A -> A -> A) -> A -> A -> Int -> A
+muln_helper.. = fun A, fun f : (A -> A -> A), fun acc : A, fun e : A, fun m : Int,
+  if m == 1 then acc
+  else muln_helper.. A f (f acc e) e (m - 1)
+
+muln : forall A, (A -> A -> A) -> A -> Int -> A
+muln = fun A, fun f : (A -> A -> A), fun e : A, fun m : Int,
+  muln_helper.. A f e e m

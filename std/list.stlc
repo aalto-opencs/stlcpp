@@ -1,0 +1,258 @@
+import bool
+
+// Syntax for cons
+infixr x :: xs = cons x xs
+
+// Get all list elements except the last one
+tail : forall A, [A] -> [A]
+tail = fun A, fun l : [A],
+  lcase l of
+  | nil => panic [A] "tail called on empty list"
+  | cons h t => t
+
+// Get the first list element
+head : forall A, [A] -> A
+head = fun A, fun l : [A],
+  lcase l of
+  | nil => panic A "head called on empty list"
+  | cons h t => h
+
+// Get the last list element
+last : forall A, [A] -> A
+last = fun A, fun l : [A],
+  lcase l of
+  | nil => panic A "last called on empty list"
+  | cons h t => lcase t of
+    | nil => h
+    | cons h tt => last A t
+
+// Get all list elements except the last one
+init : forall A, [A] -> [A]
+init = fun A, fun l : [A],
+  lcase l of
+    | nil => panic [A] "init called on empty list"
+    | cons h1 t1 => lcase t1 of
+      | nil => t1
+      | cons h2 t2 => cons h1 (init A t1)
+
+// Drop the n first elements of a list
+drop : forall A, Int -> [A] -> [A]
+drop = fun A, fun n : Int, fun l : [A],
+  if n == 0 then l
+  else lcase l of
+    | nil => l
+    | cons h t => drop A (n-1) t
+
+// Take the n first elements from a list
+take : forall A, Int -> [A] -> [A]
+take = fun A, fun n : Int, fun l : [A],
+  if n == 0 then nil A
+  else lcase l of
+    | nil => l
+    | cons h t => cons h (take A (n-1) t)
+
+// Compute the sum of a list of Integers
+sum : [Integer] -> Integer
+sum = fun xs : [Integer],
+    lcase xs of
+    | nil => 0
+    | cons x xs => x + sum xs
+
+// Append two lists
+concat : forall T, [T] -> [T] -> [T]
+concat = fun T, fun xs : [T], fun ys : [T],
+    lcase xs of
+    | nil => ys
+    | cons x xs => x :: concat T xs ys
+
+// Syntax for concatenation
+infixr xs ++ ys = fun X, concat X xs ys
+
+// Reverse a list
+reverse : forall T, [T] -> [T]
+reverse = fun T, fun xs : [T],
+    lcase xs of
+    | nil => nil T
+    | cons x xs => concat T (reverse T xs) (x :: (nil T))
+
+// Map a list
+map : forall A, forall B, (A -> B) -> [A] -> [B]
+map = fun A, fun B, fun f : A -> B, fun xs : [A],
+    lcase xs of
+    | nil => nil B
+    | cons x xs => (f x) :: map A B f xs
+
+// Fold a list (aka. foldl)
+fold : forall A, forall B, (A -> B -> A) -> A -> [B] -> A
+fold = fun A, fun B, fun f : (A -> B -> A), fun acc : A, fun l : [B],
+  lcase l of
+  | nil => acc
+  | cons h t => fold A B f (f acc h) t
+
+// Left-fold a list
+foldl : forall A, forall B, (A -> B -> A) -> A -> [B] -> A
+foldl = fold
+
+// Right-fold a list
+foldr : forall A, forall B, (A -> B -> B) -> B -> [A] -> B
+foldr = fun A, fun B, fun f : (A -> B -> B), fun acc : B, fun l : [A],
+  lcase l of
+  | nil => acc
+  | cons h t =>  f h (foldr A B f acc t)
+
+// Count the elements in a list
+count : forall A, [A] -> Int
+count = fun A, fun xs : [A],
+  let
+    counter = fun x : A, 1
+  in
+    sum (map A Int counter xs)
+
+// Check whether an element is in a list
+// NOTE: eq is only defined for ints
+elem : Int -> [Int] -> Bool
+elem = fun e : Int, fun l : [Int],
+  lcase l of
+  | nil => false
+  | cons h t => if e == h
+      then true
+      else elem e t
+
+// TODO: move to int module
+// Compare integers
+int.cmp : Int -> Int -> Int
+int.cmp = fun a : Int, fun b : Int,
+    if a > b
+      then 1
+      else
+        if a < b
+          then - 1
+          else 0
+
+// Compare booleans
+bool.cmp : Bool -> Bool -> Int
+bool.cmp = fun a : Bool, fun b : Bool,
+  if a then if b then 0 else 1
+  else if b then -1 else 0
+
+merge_inner : forall A, (A -> A -> Int) -> [A] -> [A] -> [A]
+merge_inner = fun A, fun by : (A -> A -> Int), fun left : [A], fun right : [A],
+  lcase left of
+  | nil => lcase right of
+    | nil => nil A
+    | cons h t => cons h (merge_inner A by left t)
+  | cons h t => lcase right of
+    | nil => cons h (merge_inner A by t right)
+    | cons hh tt => let cmp = by h hh
+        in if cmp > 0
+          then cons hh (merge_inner A by left tt)
+          else cons h (merge_inner A by t right)
+
+split_at_inner : forall A, Int -> [A] -> [A] -> ([A], [A])
+split_at_inner = fun A, fun at : Int, fun left : [A], fun right : [A],
+  if at == 0 then (reverse A left, right)
+  else lcase right of
+    | nil => panic ([A], [A]) "Attempting to split at out of bounds index"
+    | cons h t => split_at_inner A (at-1) (cons h left) t
+
+// Split a list at an index
+split_at : forall A, Int -> [A] -> ([A], [A])
+split_at = fun A, fun at : Int, fun l : [A], split_at_inner A at [:A] l
+
+// Sort a list based on a provided comparison function
+sort_by : forall A, (A -> A -> Int) -> [A] -> [A]
+sort_by = fun A, fun by : (A -> A -> Int), fun l : [A],
+  let len = count A l in
+  if len <= 1 then l
+  else let splits = split_at A (len / 2) l
+  in merge_inner A by (sort_by A by (fst splits)) (sort_by A by (snd splits))
+
+// Sort a list of integers
+sort : [Int] -> [Int]
+sort = sort_by Int int.cmp
+
+// Compare two lists with a provided comparison function
+list.cmp : forall A, (A -> A -> Int) -> [A] -> [A] -> Int
+list.cmp = fun A, fun cmp : (A -> A -> Int), fun l1 : [A], fun l2 : [A],
+  lcase l1 of
+  | nil => lcase l2 of
+    | nil => 0
+    | cons h t => -1
+  | cons h t => lcase l2 of
+    | nil => 1
+    | cons h2 t2 => let comparison = cmp h h2
+        in if comparison != 0 then comparison
+          else list.cmp A cmp t t2
+
+
+// FIXME: get rid of `reverse` calls
+split_inner : forall A, (A -> Bool) -> [A] -> [[A]] -> [A] -> [[A]]
+split_inner = fun A, fun pred : (A -> Bool), fun cur : [A], fun splits : [[A]], fun list : [A],
+  lcase list of
+    | nil => drop [A] 1 (reverse [A] (cons (reverse A cur) splits))
+    | cons h t => if pred h then split_inner A pred [:A] (cons (reverse A cur) splits) t
+      else split_inner A pred (cons h cur) splits t
+
+// Split a list by an element that matches to a predicate
+split : forall A, (A -> Bool) -> [A] -> [[A]]
+split = fun A, fun pred : (A -> Bool), split_inner A pred [:A] [[:A]:[A]]
+
+filter : forall A, (A -> Bool) -> [A] -> [A]
+filter = fun A, fun pred : (A -> Bool), foldr A [A]
+  (fun x : A, fun acc : [A], if pred x then x :: acc else acc)
+  [:A]
+
+// NOTE: suboptimal since it takes two passes
+partition : forall A, (A -> Bool) -> [A] -> ([A], [A])
+partition = fun A, fun pred : (A -> Bool), fun l : [A],
+  (filter A pred l, filter A (fun x : A, bool.not (pred x)) l)
+
+// Join two lists into a list of tuples
+// equivalent to `zipWith A B (A, B) (fun a : A, fun b : B, (a, b))`
+zip : forall A, forall B, [A] -> [B] -> [(A, B)]
+zip = fun A, fun B, fun l1 : [A], fun l2 : [B],
+  lcase l1 of
+    | nil => nil (A, B)
+    | cons h1 t1 => lcase l2 of
+      | nil => nil (A, B)
+      | cons h2 t2 => (h1, h2) :: (zip A B t1 t2)
+
+// Split a list of tuples to a tuple of two lists
+unzip : forall A, forall B, [(A, B)] -> ([A], [B])
+unzip = fun A, fun B, fun l : [(A, B)],
+  (
+    map (A, B) A (fun x : (A, B), fst x) l,
+    map (A, B) B (fun x : (A, B), snd x) l
+  )
+
+// Join two lists with an arbitrary function
+zipWith : forall A, forall B, forall C, (A -> B -> C) -> [A] -> [B] -> [C]
+zipWith = fun A, fun B, fun C,
+  fun f : (A -> B -> C), fun as : [A], fun bs : [B],
+  lcase as of
+    | nil => nil C
+    | cons a at => lcase bs of
+      | nil => nil C
+      | cons b bt => (f a b) :: (zipWith A B C f at bt)
+
+// takes an element and a list and produces a list with the element put between every element of the list
+// e.g. `intersperse Int 1 [3,4,5:Int] => [3,1,4,1,5]`
+intersperse : forall A, A -> [A] -> [A]
+intersperse = fun A, fun e : A, fun l : [A],
+  let f = fun x : A, fun acc : [A], x :: e :: acc
+  in init A (foldr A [A] f [:A] l)
+
+indexOf.. : forall A, Int -> (A -> Bool) -> [A] -> (Unit + Int)
+indexOf.. = fun A, fun n : Int, fun pred : (A -> Bool), fun l : [A],
+  lcase l of
+    | nil => inl () Int
+    | cons h t => if pred h then inr n Unit else indexOf.. A (n + 1) pred t
+
+indexOf : forall A, (A -> Bool) -> [A] -> (Unit + Int)
+indexOf = fun A, indexOf.. A 0
+
+index : forall A, Int -> [A] -> A
+index = fun A, fun i : Int, fun l : [A],
+  lcase l of
+    | nil => panic A "Index out of range"
+    | cons h t => if i == 0 then h else index A (i - 1) t

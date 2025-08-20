@@ -1,0 +1,73 @@
+Nat : Type
+Nat = [Unit]
+
+zero : Nat
+zero = [:Unit]
+
+succ : Nat -> Nat
+succ = fun n : Nat, () :: n
+
+one : Nat
+one = succ zero
+
+two : Nat
+two = succ one
+
+three : Nat
+three = succ two
+
+add : Nat -> Nat -> Nat
+add = fun a : Nat, fun b : Nat, lcase a of
+    | nil => b
+    | cons a as => succ (add as b)
+
+encode : Int -> Nat
+encode = fun n : Int,
+  if n <= 0 then zero
+  else succ (encode (n - 1))
+
+decode : Nat -> Int
+decode = fun n : Nat, lcase n of
+    | nil => 0
+    | cons a as => 1 + decode as
+
+decode' : Nat -> Int
+decode' = foldl Int Unit (fun n : Int, fun x : Unit, n + 1) 0
+
+//    any type  scrutinee zero    successor          output
+//    |         |         |       |                  |
+rec : forall T, Nat ->    T    -> (Nat -> T -> T) -> T
+rec = fun T, fun n : Nat, fun c : T, fun f : Nat -> T -> T,
+    lcase n of
+    | nil => c
+    | cons x xs => f xs (rec T xs c f)
+
+add2 : Nat -> Nat -> Nat
+add2 = fun a : Nat, fun b : Nat, rec Nat a
+  b
+  (fun xs : Nat, fun ih : Nat, succ ih)
+
+mul : Nat -> Nat -> Nat
+mul = fun a : Nat, fun b : Nat, rec Nat a
+  zero
+  (fun xs : Nat, fun ih : Nat, add2 b ih)
+
+// xs is the predecessor of n (in rec)
+factorial : Nat -> Nat
+factorial = fun a : Nat, rec Nat a
+  one
+  (fun xs : Nat, fun ih : Nat, mul ih (succ xs))
+
+fib_helper : Nat -> (Nat, Nat)
+fib_helper = fun n : Nat, rec (Nat, Nat) n
+    (zero, one)
+    (fun xs : Nat, fun ih : (Nat, Nat), (snd ih, add (fst ih) (snd ih)))
+
+fib : Nat -> Nat
+fib = fun n : Nat, fst (fib_helper n)
+
+fib' : Int -> Int
+fib' = fun n : Int, decode (fib (encode n))
+
+main : Int
+main = decode (factorial (encode 10))

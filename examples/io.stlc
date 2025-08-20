@@ -1,0 +1,26 @@
+import fib
+
+greet : IO Unit
+greet = bind String Unit
+    (fun s : String, print ("Hello " <> s <> "!"))
+    readline
+
+greet2 : IO Unit
+greet2 = bind String Unit
+    (fun s : String,
+        bind Unit Unit
+        (fun x : Unit, bind String Unit
+            (fun s2 : String, print ("Hello " <> s2 <> "!!!"))
+            readline)
+        (print ("Hello " <> s <> "!\nWhat is your name???\n")))
+    readline
+
+unwrap : (Unit + Int) -> Int
+unwrap = fun opt : Unit + Int, case opt of
+    | inl x => panic Int "unwrap failed womp womp"
+    | inr n => n
+
+calcfib : IO Unit
+calcfib = bind String Unit
+    (fun s : String, print (int.to_string (fib (unwrap (int.parse s)))))
+    readline

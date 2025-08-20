@@ -1,0 +1,43 @@
+import list
+
+int.rem : Int -> Int -> Int
+int.rem = fun n : Int, fun m : Int,
+  n - (n / m) * m
+
+// panics if out of range, only callable with 0-9
+int.to_char.. : Int -> Char
+int.to_char.. = fun n : Int,
+  index Char n "0123456789"
+
+int.to_string.. : String -> Int -> String
+int.to_string.. = fun s : String, fun n : Int,
+  if n == 0 then s
+  else
+    let rem = int.rem n 10 in
+    int.to_string.. (cons (int.to_char.. rem) s) (n / 10)
+
+
+int.to_string : Int -> String
+int.to_string = fun n : Int,
+  if n < 0 then cons '-' (int.to_string (-n))
+  else if n == 0 then "0"
+  else int.to_string.. "" n
+
+
+int.parse.. : Int -> String -> (Unit + Int)
+int.parse.. = fun n : Int, fun s : String,
+  lcase s of
+  | nil => inr n Unit
+  | cons h t => case (indexOf Char (fun c : Char, c == h) "0123456789") of
+    | inl v => inl v Int
+    | inr i => int.parse.. (n * 10 + i) t
+
+int.parse : String -> (Unit + Int)
+int.parse = fun s : String,
+  lcase s of
+    | nil => inl () Int
+    | cons h t => if h == '-' then
+        case (int.parse.. 0 t) of
+          | inl v => inl v Int
+          | inr n => inr (-n) Unit
+      else int.parse.. 0 s

@@ -1,0 +1,11 @@
+id : forall X, X -> X
+id = fun X, fun x : X, x
+
+rank2 : (forall X, X -> X) -> (Int, Bool)
+rank2 = fun f : forall X, X -> X, (f Int 2, f Bool true)
+
+rank3 : forall R, ((forall A, A -> A) -> R) -> R
+rank3 = fun R, fun h : (forall A, A -> A) -> R, h id
+
+main : (Int, Bool)
+main = rank3 (Int, Bool) rank2

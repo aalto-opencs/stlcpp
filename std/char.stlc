@@ -1,0 +1,10 @@
+import syntax
+import aliases
+
+char.cmp : Char -> Char -> Int
+char.cmp = fun a : Char, fun b : Char,
+    if a > b then 1
+      else
+        if a < b
+          then - 1
+          else 0

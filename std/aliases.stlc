@@ -1,0 +1,11 @@
+Int : Type
+Int = Integer
+
+Bool : Type
+Bool = Boolean
+
+Char : Type
+Char = Character
+
+String : Type
+String = [Char]

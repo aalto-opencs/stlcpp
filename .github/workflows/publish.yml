@@ -1,0 +1,60 @@
+name: Build and Push stlcpp Docker Image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      # - name: Cache Nix store
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       /nix/store
+      #       /nix/var/nix/profiles
+      #       ~/.cache/nix
+      #     key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', 'npins/*') }}
+      #     restore-keys: |
+      #       nix-${{ runner.os }}-
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image with Nix
+        run: |
+          nix-build -A oci
+          IMAGE_TAR=$(readlink -f result)
+          echo "Built image: $IMAGE_TAR"
+
+      - name: Load image
+        run: |
+          docker load < result
+
+      - name: Push to GHCR
+        run: |
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/stlcpp"
+          COMMIT_TAG="${GITHUB_SHA::7}"
+          docker tag stlcpp:latest "$IMAGE_NAME:latest"
+          docker tag stlcpp:latest "$IMAGE_NAME:$COMMIT_TAG"
+          docker push "$IMAGE_NAME:latest"
+          docker push "$IMAGE_NAME:$COMMIT_TAG"

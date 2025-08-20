@@ -1,0 +1,2 @@
+absurd : Int
+absurd = absurd

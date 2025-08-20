@@ -1,0 +1,29 @@
+id : forall T, T -> T
+id = fun T, fun x : T, x
+
+tru : forall T, T -> T -> T
+tru = fun T, fun x : T, fun y : T, x
+
+fals : forall T, T -> T -> T
+fals = fun T, fun x : T, fun y : T, y
+
+cnot : (forall T, T -> T -> T) -> (forall T, T -> T -> T)
+cnot = fun b : (forall T, T -> T -> T), fun T, fun x : T, fun y : T, b T y x
+
+unchurchbool : (forall T, T -> T -> T) -> Bool
+unchurchbool = fun b : (forall T, T -> T -> T), b Bool true false
+
+zero : forall T, (T -> T) -> T -> T
+zero = fun T, fun f : T -> T, fun x : T, x
+
+succ : (forall T, (T -> T) -> T -> T) -> (forall T, (T -> T) -> T -> T)
+succ = fun n : (forall T, (T -> T) -> T -> T), fun T, fun f : T -> T, fun x : T, f (n T f x)
+
+one : forall T, (T -> T) -> T -> T
+one = succ zero
+
+cadd : (forall T, (T -> T) -> T -> T) -> (forall T, (T -> T) -> T -> T) -> (forall T, (T -> T) -> T -> T)
+cadd = fun a : (forall T, (T -> T) -> T -> T), fun b : (forall T, (T -> T) -> T -> T), fun T, fun f : T -> T, fun x : T, a T f (b T f x)
+
+unchurchnat : (forall T, (T -> T) -> T -> T) -> Int
+unchurchnat = fun n : (forall T, (T -> T) -> T -> T), n Int (fun x : Int, x + 1) 0

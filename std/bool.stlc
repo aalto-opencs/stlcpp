@@ -1,0 +1,20 @@
+import syntax
+import aliases
+import char
+
+bool.not : Bool -> Bool
+bool.not = fun x : Bool, if x then false else true
+
+bool.and : Bool -> Bool -> Bool
+bool.and = fun x : Bool, fun y : Bool, if x == y then x else false
+
+bool.or : Bool -> Bool -> Bool
+bool.or = fun x : Bool, fun y : Bool, if x then x else y
+
+bool.xor : Bool -> Bool -> Bool
+bool.xor = fun x : Bool, fun y : Bool, if x == y then false else bool.or x y
+
+infixl:25 x && y = bool.and x y
+infixl:26 x || y = bool.or x y
+infixl:26 x ^ y = bool.xor x y
+prefix:19 ! x = bool.not x

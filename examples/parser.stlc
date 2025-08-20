@@ -1,0 +1,47 @@
+parse_char : Char -> [Char] -> [Char] + (Unit, [Char])
+parse_char = fun c : Char, fun cs : [Char], lcase cs of
+    | nil => inl cs (Unit, [Char])
+    | cons x xs =>
+        if x == c then inr ((), xs) [Char]
+        else inl cs (Unit, [Char])
+
+pure : (Unit, [Char]) -> [Char] + (Unit, [Char])
+pure = fun x : (Unit, [Char]), inr x [Char]
+
+fail : [Char] -> [Char] + (Unit, [Char])
+fail = fun cs : [Char], inl cs (Unit, [Char])
+
+// Type is Parser Unit
+parse_lparen : [Char] -> [Char] + (Unit, [Char])
+parse_lparen = parse_char '('
+
+parse_rparen : [Char] -> [Char] + (Unit, [Char])
+parse_rparen = parse_char ')'
+
+// Parser Unit -> Parser Unit -> Parser Unit
+seq : ([Char] -> [Char] + (Unit, [Char])) -> ([Char] -> [Char] + (Unit, [Char])) -> [Char] -> [Char] + (Unit, [Char])
+seq = fun f : [Char] -> [Char] + (Unit, [Char]), fun g : [Char] -> [Char] + (Unit, [Char]), fun cs : [Char],
+    case f cs of
+    | inl cs => fail cs
+    | inr res => g (snd res)
+
+infixr f. *> g. = seq f. g.
+
+parse_paren_pair : [Char] -> [Char] + (Unit, [Char])
+parse_paren_pair = parse_lparen *> parse_rparen
+
+alt : ([Char] -> [Char] + (Unit, [Char])) -> ([Char] -> [Char] + (Unit, [Char])) -> [Char] -> [Char] + (Unit, [Char])
+alt = fun f : [Char] -> [Char] + (Unit, [Char]), fun g : [Char] -> [Char] + (Unit, [Char]), fun cs : [Char],
+    case f cs of
+    | inl cs_ => g cs
+    | inr res => pure res
+
+parse_matching_parens : [Char] -> [Char] + (Unit, [Char])
+parse_matching_parens = alt
+    (fun cs : [Char], (parse_lparen *> parse_matching_parens *> parse_rparen) cs)
+    (alt
+        (fun cs : [Char], (parse_paren_pair *> parse_matching_parens) cs)
+        parse_paren_pair)
+
+test : [Char] + (Unit, [Char])
+test = parse_matching_parens "(()(()))"

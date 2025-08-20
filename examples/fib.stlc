@@ -1,0 +1,32 @@
+fib : Integer -> Integer
+fib = fun n : Integer,
+    if n < 2 then
+        n
+    else
+        fib (n - 1) + fib (n - 2)
+
+fibn : Integer -> [Integer]
+fibn = fun n : Integer,
+    if n == 0 then
+        nil Integer
+    else
+        cons (fib n) (fibn (n - 1))
+
+fibnInner : Integer -> Integer -> Integer -> [Integer]
+fibnInner = fun n : Integer, fun a : Integer, fun b : Integer,
+  if n < 1 then
+    nil Integer
+  else
+    cons b (fibnInner (n - 1) b (a + b))
+
+fibnBetter : Integer -> [Integer]
+fibnBetter = fun n : Integer,
+  if n == 1 then
+    cons 1 (nil Integer)
+  else if n == 2 then
+    cons 1 (nil Integer)
+  else
+    cons 1 (fibnInner (n - 1) 1 1)
+
+main : List Integer
+main = fibn 10

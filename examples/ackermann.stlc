@@ -1,0 +1,19 @@
+import nat
+
+iszero : Nat -> Bool
+iszero = fun n : Nat, rec Bool n true (fun xs : Nat, fun ih : Bool, false)
+
+pred : Nat -> Nat
+pred = fun n : Nat, rec Nat n zero (fun xs : Nat, fun ih : Nat, xs)
+
+ack : Nat -> Nat -> Nat
+ack = fun a : Nat, fun b : Nat,
+    if iszero a then
+        succ b
+    else if iszero b then
+        ack (pred a) one
+    else
+        ack (pred a) (ack a (pred b))
+
+ack' : Int -> Int -> Int
+ack' = fun a : Int, fun b : Int, decode (ack (encode a) (encode b))

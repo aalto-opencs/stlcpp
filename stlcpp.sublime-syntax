@@ -1,0 +1,91 @@
+%YAML 1.2
+---
+name: stlcpp
+file_extensions:
+  - stlc
+scope: source.stlcpp
+contexts:
+  main:
+    - include: comments
+    - include: strings
+    - include: declarations
+    - include: keywords
+    - include: types
+    - include: constants
+    - include: operators
+    - include: punctuation
+    - include: variables
+
+  comments:
+    - match: //
+      scope: comment.line.double-slash.stlcpp
+      push:
+        - meta_scope: comment.line.double-slash.stlcpp
+        - match: \b(TODO|FIXME|XXX)\b
+          scope: comment.line.double-slash.stlcpp constant.other.todo.stlcpp
+        - match: $
+          pop: true
+
+  strings:
+    - match: '"'
+      scope: punctuation.definition.string.begin.stlcpp
+      push:
+        - meta_scope: string.quoted.double.stlcpp
+        - match: '\\u\{[0-9a-fA-F]+\}|\\.'
+          scope: constant.character.escape.stlcpp
+        - match: '"'
+          scope: punctuation.definition.string.end.stlcpp
+          pop: true
+    - match: "'"
+      scope: punctuation.definition.string.begin.stlcpp
+      push:
+        - meta_scope: string.quoted.single.stlcpp
+        - match: '\\u\{[0-9a-fA-F]+\}|\\.'
+          scope: constant.character.escape.stlcpp
+        - match: "'"
+          scope: punctuation.definition.string.end.stlcpp
+          pop: true
+
+  declarations:
+    # Matches 'name :' or 'name =' at start of line
+    - match: '^[a-z][a-zA-Z0-9_.]*(?=\s*[:=])'
+      scope: entity.name.function.stlcpp
+
+  keywords:
+    - match: '\b(import)\b'
+      scope: keyword.control.import.stlcpp
+    - match: '\b(fun|let|in|if|then|else|lcase|case|of|fix|panic|trace|return|fst|snd|inl|inr|cons|nil)\b'
+      scope: keyword.control.stlcpp
+    - match: '\b(infix|infixl|infixr)\b'
+      scope: keyword.declaration.stlcpp
+
+  types:
+    - match: \b(Integer|Int|Boolean|Bool|Character|Char|List|Type)\b
+      scope: support.class.stlcpp
+    - match: \b(forall)\b
+      scope: storage.modifier.stlcpp
+      # Type variables (start with uppercase)
+    - match: \b[A-Z][a-zA-Z0-9_]*\b
+      scope: support.class.stlcpp
+
+  constants:
+    - match: '\b(true|false)\b'
+      scope: constant.language.boolean.stlcpp
+    - match: '\b\d+\b'
+      scope: constant.numeric.stlcpp
+
+  operators:
+    # ->, =>, ::, :, =, +, -, *, /, ==, !=, <=, >=, <, >, $
+    # Escaped special regex characters: + * | $
+    - match: '(->|=>|::|==|!=|<=|>=|:|\||=|\+|\-|\*|/|<|>|\$)'
+      scope: keyword.operator.stlcpp
+
+  punctuation:
+    # (, ), [, ], {, }, ,, |
+    - match: '[\(\)\[\]\{\},|]'
+      scope: punctuation.separator.stlcpp
+
+  variables:
+    # Term variables (start with lowercase)
+    - match: '\b[a-z][a-zA-Z0-9_.]*\b'
+      scope: variable.other.readwrite.stlcpp

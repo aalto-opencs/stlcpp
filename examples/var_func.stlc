@@ -1,0 +1,7 @@
+// favorite number
+a : Int
+a = 123
+
+// favorite function
+f : Int -> Int
+f = fun x : Int, a

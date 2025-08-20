@@ -1,0 +1,16 @@
+import extra
+
+infixl:10 x + y = __add x y
+infixl:10 x - y = __sub x y
+infixl:5 x * y = __mul x y
+infixl:5 x / y = __div x y
+infixl:20 x == y = __eq x y
+infixl:20 x != y = __ne x y
+infixl:20 x > y = __gt x y
+infixl:20 x < y = __lt x y
+infixl:20 x >= y = __ge x y
+infixl:20 x <= y = __le x y
+prefix:10 - x = 0 - x
+
+infixr:50 f <| x = f x
+infixl:50 x |> f = f x

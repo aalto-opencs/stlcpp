@@ -1,0 +1,4 @@
+import list
+
+main : Integer
+main = sum (1 :: 2 :: 3 :: four :: nil Integer)

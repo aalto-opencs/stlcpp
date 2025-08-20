@@ -1,0 +1,13 @@
+infixr f $ x = f x
+
+id : Int -> Int
+id = fun x : Int, x
+
+example : Int
+example = (fun x : Int, x) $ id $ id $ 5
+
+infixr a ! b = a + a * b
+prefix & c = c ! c
+
+main : Int
+main = & 8

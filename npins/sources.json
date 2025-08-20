@@ -1,0 +1,61 @@
+{
+  "pins": {
+    "crane": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "ipetkov",
+        "repo": "crane"
+      },
+      "branch": "master",
+      "submodules": false,
+      "revision": "3c40c97e1881fff381e4615e82557b333edf65c4",
+      "timestamp": "2025-08-18T17:19:12Z",
+      "url": "https://github.com/ipetkov/crane/archive/3c40c97e1881fff381e4615e82557b333edf65c4.tar.gz",
+      "hash": "sha256-Tg+P8kFIneqnQLT8E0QqlCrldtdLo1n1y619/mxRD44="
+    },
+    "fenix": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "nix-community",
+        "repo": "fenix"
+      },
+      "branch": "main",
+      "submodules": false,
+      "revision": "6ed03ef4c8ec36d193c18e06b9ecddde78fb7e42",
+      "timestamp": "2025-08-19T06:39:59Z",
+      "url": "https://github.com/nix-community/fenix/archive/6ed03ef4c8ec36d193c18e06b9ecddde78fb7e42.tar.gz",
+      "hash": "sha256-tl/0cnsqB/Yt7DbaGMel2RLa7QG5elA8lkaOXli6VdY="
+    },
+    "nixpkgs": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "nixos",
+        "repo": "nixpkgs"
+      },
+      "branch": "nixos-unstable",
+      "submodules": false,
+      "revision": "20075955deac2583bb12f07151c2df830ef346b4",
+      "timestamp": "2025-08-19T15:00:17Z",
+      "url": "https://github.com/nixos/nixpkgs/archive/20075955deac2583bb12f07151c2df830ef346b4.tar.gz",
+      "hash": "sha256-HMwfAJBdrr8wXAkbGhtcby1zGFvs+StOp19xNsbqdOg="
+    },
+    "npins": {
+      "type": "Git",
+      "repository": {
+        "type": "GitHub",
+        "owner": "xhalo32",
+        "repo": "npins"
+      },
+      "branch": "master",
+      "submodules": false,
+      "revision": "fabc882b90be81364faee93d8d8a30418cec9188",
+      "timestamp": "2025-07-30T09:38:04Z",
+      "url": "https://github.com/xhalo32/npins/archive/fabc882b90be81364faee93d8d8a30418cec9188.tar.gz",
+      "hash": "sha256-UGcsxNf8JnXY+DxyRQJUYkZEv7jKlOuW1PS+swGn4/4="
+    }
+  },
+  "version": 6
+}

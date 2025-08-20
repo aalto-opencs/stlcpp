@@ -1,0 +1,5 @@
+four : Integer
+four = 5
+
+example : Int
+example = count Int [1, 2, 3, 4, 5:Int]

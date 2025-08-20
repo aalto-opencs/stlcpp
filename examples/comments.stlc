@@ -1,0 +1,20 @@
+// Import fib utilities
+import fib
+
+// Waaaat
+x : Int
+x = 5
+
+// Waaaat
+x : Int -> Int
+x = fun x : Int,
+    // This
+    // is
+    // comment
+    x
+
+y : [Int]
+y = [1,
+    // yes
+    2 :Int
+    ]
