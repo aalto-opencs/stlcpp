@@ -4,6 +4,8 @@ int.rem : Int -> Int -> Int
 int.rem = fun n : Int, fun m : Int,
   n - (n / m) * m
 
+infixl:20 x % y = int.rem x y
+
 // panics if out of range, only callable with 0-9
 int.to_char.. : Int -> Char
 int.to_char.. = fun n : Int,
