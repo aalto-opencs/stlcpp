@@ -62,9 +62,8 @@ rec {
       pkgs.python3
     ];
 
-    # Optional: environment, entrypoint, or command
     config = {
-      Cmd = [ "${packages.stlcpp}/bin/stlcpp" ];
+      Entrypoint = [ "${packages.stlcpp}/bin/stlcpp" ];
       WorkingDir = "/";
       Env = [
         "PATH=${
