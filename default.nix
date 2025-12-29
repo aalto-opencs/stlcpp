@@ -17,6 +17,22 @@ let
 in
 rec {
   packages.stlcpp = pkgs.callPackage ./stlcpp.nix { inherit craneLib; };
+  packages.stlcpp-wasm = pkgs.callPackage ./stlcpp.nix {
+    inherit craneLib;
+    cargoExtraArgs = "--target wasm32-unknown-unknown --lib";
+    doCheck = false;
+    nativeBuildInputs = [ pkgs.llvmPackages.bintools ];
+    CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER = "lld";
+  };
+  packages.playground = pkgs.callPackage ./playground.nix {
+    inherit (packages) stlcpp-wasm;
+  };
+
+  packages.run-playground = pkgs.writeShellScriptBin "run-playground" ''
+    echo "Serving playground from ${packages.playground}..."
+    ${pkgs.python3}/bin/python3 ${packages.playground}/server.py
+  '';
+
   package = packages.stlcpp;
   shell = craneLib.devShell {
     packages = [
