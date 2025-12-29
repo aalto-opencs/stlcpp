@@ -1,5 +1,5 @@
 todo : forall A, A
 todo = fun A, panic A "todo encountered"
 
-count : forall A, [A] -> Int
-count = todo (forall A, [A] -> Int)
+count2 : forall A, [A] -> Int
+count2 = todo (forall A, [A] -> Int)

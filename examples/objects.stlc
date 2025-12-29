@@ -3,7 +3,7 @@ string.add : [Char] -> [Char] -> [Char]
 string.add = concat Char
 
 int.add : Int -> Int -> Int
-int.add = fun x : Int, fun y : Int, add x y
+int.add = fun x : Int, fun y : Int, x + y
 
 muln_helper.. : forall A, (A -> A -> A) -> A -> A -> Int -> A
 muln_helper.. = fun A, fun f : (A -> A -> A), fun acc : A, fun e : A, fun m : Int,

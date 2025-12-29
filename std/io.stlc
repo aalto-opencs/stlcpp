@@ -1,14 +1,14 @@
 import string
 
-readline : IO String
-readline = __readline
+io.readline : IO String
+io.readline = __readline
 
-print : String -> IO Unit
-print = fun s : String, __print s
+io.print : String -> IO Unit
+io.print = fun s : String, __print s
 
-pure : forall A, A -> IO A
-pure = fun A, fun x : A, __pure A x
+io.pure : forall A, A -> IO A
+io.pure = fun A, fun x : A, __pure A x
 
-bind : forall A, forall B, (A -> IO B) -> IO A -> IO B
-bind = fun A, fun B, fun func : A -> IO B, fun a : IO A, __bind A B func a
+io.bind : forall A, forall B, (A -> IO B) -> IO A -> IO B
+io.bind = fun A, fun B, fun func : A -> IO B, fun a : IO A, __bind A B func a
 // TODO do we want __bind to not take A and B?

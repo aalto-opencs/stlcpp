@@ -1,19 +1,19 @@
 import fib
 
 greet : IO Unit
-greet = bind String Unit
-    (fun s : String, print ("Hello " <> s <> "!"))
-    readline
+greet = io.bind String Unit
+    (fun s : String, io.print ("Hello " <> s <> "!"))
+    io.readline
 
 greet2 : IO Unit
-greet2 = bind String Unit
+greet2 = io.bind String Unit
     (fun s : String,
-        bind Unit Unit
-        (fun x : Unit, bind String Unit
-            (fun s2 : String, print ("Hello " <> s2 <> "!!!"))
-            readline)
-        (print ("Hello " <> s <> "!\nWhat is your name???\n")))
-    readline
+        io.bind Unit Unit
+        (fun x : Unit, io.bind String Unit
+            (fun s2 : String, io.print ("Hello " <> s2 <> "!!!"))
+            io.readline)
+        (io.print ("Hello " <> s <> "!\nWhat is your name???\n")))
+    io.readline
 
 unwrap : (Unit + Int) -> Int
 unwrap = fun opt : Unit + Int, case opt of
@@ -21,6 +21,6 @@ unwrap = fun opt : Unit + Int, case opt of
     | inr n => n
 
 calcfib : IO Unit
-calcfib = bind String Unit
-    (fun s : String, print (int.to_string (fib (unwrap (int.parse s)))))
-    readline
+calcfib = io.bind String Unit
+    (fun s : String, io.print (int.to_string (fib (unwrap (int.parse s)))))
+    io.readline

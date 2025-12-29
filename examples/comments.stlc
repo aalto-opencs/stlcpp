@@ -2,10 +2,6 @@
 import fib
 
 // Waaaat
-x : Int
-x = 5
-
-// Waaaat
 x : Int -> Int
 x = fun x : Int,
     // This
