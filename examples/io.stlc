@@ -24,3 +24,6 @@ calcfib : IO Unit
 calcfib = io.bind String Unit
     (fun s : String, io.print (int.to_string (fib (unwrap (int.parse s)))))
     io.readline
+
+main : IO Unit
+main = io.bind Unit Unit (fun _ : Unit, greet) (io.print "What is your name?\n")

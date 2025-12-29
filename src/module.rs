@@ -23,9 +23,10 @@ use std::path::{Path, PathBuf};
 
 use crate::context::{self, Context};
 use crate::errors::Error;
+use crate::parse::Span;
 use crate::syntax::Syntaxes;
 use crate::term::Term::{self};
-use crate::term::parse::{Desugared, SpannedToken};
+use crate::term::parse::{Desugared, SpannedToken, Token};
 use crate::r#type::named_type::NamedType;
 use crate::r#type::parse::SpannedToken as TSpannedToken;
 use parse::parse_module;
@@ -220,6 +221,30 @@ Hint: type aliases must be declared before they are used, and only earlier alias
         }
 
         Ok(env)
+    }
+
+    pub fn exec_main(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let env = self.env()?;
+        let aliases = self.type_alias_env()?;
+
+        let body = SpannedToken {
+            token: Token::Var("main".into()),
+            position: Span::new_extra("main", "main"),
+            _state: std::marker::PhantomData,
+        };
+        body.type_check(env.clone().into(), &aliases)?;
+        let t: Term = body
+            .token
+            .clone()
+            .to_term_ctx_with_aliases(vec![], &aliases)?;
+
+        let env = env
+            .into_iter()
+            .map(|(name, (term, _))| (name, term))
+            .collect();
+
+        t.exec(&env)?;
+        Ok(())
     }
 }
 

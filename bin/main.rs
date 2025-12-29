@@ -5,6 +5,7 @@ use stlcpp::module::{Import, ModuleTree};
 use stlcpp::parse::{Span, ws0};
 use stlcpp::term::Term;
 use stlcpp::term::parse::{Desugared, SpannedToken, parse_term};
+use stlcpp::r#type::named_type::NamedType;
 
 use std::process::exit;
 use std::{
@@ -149,17 +150,21 @@ fn process(line: &'static str, module_tree: &ModuleTree) -> Result<(), Box<dyn s
         .collect();
 
     let ty_str = ty.to_string();
-    let res = if exec {
+    if exec {
         let res = t.exec(&env)?;
         println!("");
-        res
+        if let NamedType::IO(ty1) = ty
+            && *ty1 != NamedType::Unit
+        {
+            println!("{res}");
+        }
     } else {
-        t.multistep(&env)
-    };
-    if ty_str.len() > 10 {
-        println!("{1}\n  : {0}", ty_str, res);
-    } else {
-        println!("{1} : {0}", ty_str, res);
+        let res = t.multistep(&env);
+        if ty_str.len() > 10 {
+            println!("{1}\n  : {0}", ty_str, res);
+        } else {
+            println!("{1} : {0}", ty_str, res);
+        }
     }
     Ok(())
 }
@@ -236,11 +241,14 @@ fn main_res() -> Result<bool, Box<dyn std::error::Error>> {
     let _exe = args.next();
 
     let mut no_history = false;
+    let mut exec = false;
     let mut file: Option<String> = None;
 
     for arg in args {
+        // TODO use structopt and clap
         match arg.as_str() {
             "--no-history" => no_history = true,
+            "--exec" => exec = true,
             _ if arg.starts_with('-') => {
                 panic!("unknown flag '{arg}'")
             }
@@ -254,6 +262,7 @@ fn main_res() -> Result<bool, Box<dyn std::error::Error>> {
 
     let p = prelude()?;
     p.type_check()?;
+
     Ok(match file {
         Some(name) => {
             let i = Import(PathBuf::from(&name));
@@ -261,9 +270,20 @@ fn main_res() -> Result<bool, Box<dyn std::error::Error>> {
 
             mt.type_check()?;
 
-            start_repl(Some(&name), mt, no_history)?
+            if exec {
+                mt.exec_main()?;
+                false
+            } else {
+                start_repl(Some(&name), mt, no_history)?
+            }
         }
-        None => start_repl(None, p, no_history)?,
+        None => {
+            if exec {
+                panic!("argument --exec requires a file argument");
+            }
+
+            start_repl(None, p, no_history)?
+        }
     })
 }
 

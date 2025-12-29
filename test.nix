@@ -18,13 +18,17 @@ pkgs.testers.runNixOSTest {
     start_all()
 
     with subtest("std"):
-      output = client.succeed("echo 'map' | stlcpp")
+      client.succeed("echo 'map' | stlcpp")
 
     for example in os.listdir("${./examples}"):
       filename = os.fsdecode(example)
       if not filename.endswith(".stlc"):
         continue
       with subtest("Example: " + filename):
-        client.succeed("echo '42' | stlcpp " + "${./examples}/" + filename)
+        client.succeed("echo '42' | stlcpp ${./examples}/" + filename)
+
+    with subtest("io"):
+      output = client.succeed("echo 'IO' | stlcpp --exec ${./examples}/io.stlc")
+      assert "Hello IO!" in output
   '';
 }

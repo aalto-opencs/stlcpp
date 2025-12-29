@@ -27,6 +27,3 @@ fibnBetter = fun n : Integer,
     cons 1 (nil Integer)
   else
     cons 1 (fibnInner (n - 1) 1 1)
-
-main : List Integer
-main = fibn 10
