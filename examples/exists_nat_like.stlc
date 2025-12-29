@@ -1,0 +1,54 @@
+import nat
+
+// Natural numbers are characterized by having a zero, a successor and a recursor.
+// We can implement a generic natural number object using an existential type quantifying over X with the following API:
+//   zero : X
+//   succ : X -> X
+//   rec : forall Y, Y -> (Y -> Y) -> X -> Y
+//   repr : X -> String
+ExistsNatLike : Type
+ExistsNatLike = forall Y, (forall X,
+        X ->
+        (X -> X) ->
+        (forall Y, Y -> (Y -> Y) -> X -> Y) ->
+        (X -> String) ->
+    Y) -> Y
+
+pack : forall T, T -> (T -> T) -> (forall Y, Y -> (Y -> Y) -> T -> Y) -> (T -> String) -> ExistsNatLike
+pack = fun T, fun zero : T, fun succ : T -> T, fun rec : (forall Y, Y -> (Y -> Y) -> T -> Y), fun repr : T -> String,
+    fun Z, fun get : (forall X, X -> (X -> X) -> (forall Y, Y -> (Y -> Y) -> X -> Y) -> (X -> String) -> Z), get T zero succ rec repr
+
+unpack : forall Y, (forall X, X -> (X -> X) -> (forall Y, Y -> (Y -> Y) -> X -> Y) -> (X -> String) -> Y) -> ExistsNatLike -> Y
+unpack = fun Y, fun get : (forall X, X -> (X -> X) -> (forall Y, Y -> (Y -> Y) -> X -> Y) -> (X -> String) -> Y), fun m : ExistsNatLike, m Y get
+
+int.rec : forall Y, Y -> (Y -> Y) -> Int -> Y
+int.rec = fun Y, fun c : Y, fun f : Y -> Y, fun n : Int,
+    if n <= 0 then c
+    else f (int.rec Y c f (n - 1))
+
+int.natLike : ExistsNatLike
+int.natLike = pack Int 0 (fun x : Int, x + 1) int.rec int.to_string
+
+// Unlike rec in nat.stlc, we don't provide the previous nat to f
+nat.rec : forall T, T -> (T -> T) -> Nat -> T
+nat.rec = fun T, fun c : T, fun f : T -> T, fun n : Nat,
+    lcase n of
+    | nil => c
+    | cons _ xs => f (nat.rec T c f xs)
+
+nat.natLike : ExistsNatLike
+nat.natLike = pack Nat zero succ nat.rec (fun n : Nat, "nat " <> int.to_string (decode n))
+
+natLike.add : forall X, X -> (X -> X) -> (forall Y, Y -> (Y -> Y) -> X -> Y) -> X -> X -> X
+natLike.add = fun X, fun zero : X, fun succ : X -> X, fun rec : (forall Y, Y -> (Y -> Y) -> X -> Y),
+    fun x : X, fun y : X, rec X y succ x
+
+main : [String]
+main = map ExistsNatLike [Char] (unpack String
+        (fun X, fun zero : X, fun succ : X -> X, fun rec : (forall Y, Y -> (Y -> Y) -> X -> Y), fun repr : X -> String,
+            // Here you can use X just like a natural number!
+            let two = succ (succ zero) in
+            let addX = natLike.add X zero succ rec in
+            repr (addX two two)
+        ))
+        [int.natLike, nat.natLike :ExistsNatLike]

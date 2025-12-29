@@ -145,6 +145,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                     return Err(TypeError::NotProperlyFormed(
                         var.clone(),
                         (ty.position, named_type),
+                        ctx.into(),
                     ));
                 }
                 ctx.insert(var.clone(), named_type.clone());
@@ -160,14 +161,23 @@ impl<'a> SpannedToken<'a, Desugared> {
                     if ty2 == *dom {
                         Ok(*cod)
                     } else if let Abs { ty, .. } = term.token.clone() {
-                        Err(Mismatch((ty.position, *dom), (term1.position, ty2)))
+                        Err(Mismatch(
+                            (ty.position, *dom),
+                            (term1.position, ty2),
+                            ctx.into(),
+                        ))
                     } else {
-                        Err(Mismatch((term.position, *dom), (term1.position, ty2)))
+                        Err(Mismatch(
+                            (term.position, *dom),
+                            (term1.position, ty2),
+                            ctx.into(),
+                        ))
                     }
                 } else {
                     Err(Mismatch(
                         (term1.position, arrow(NamedType::Hole, NamedType::Hole)),
                         (term.position, ty1),
+                        ctx.into(),
                     ))
                 }
             }
@@ -188,7 +198,11 @@ impl<'a> SpannedToken<'a, Desugared> {
                     let ty1 = if_true.infer_type(ctx.clone(), aliases)?;
                     let ty2 = if_false.infer_type(ctx.clone(), aliases)?;
                     if ty2 != ty1 {
-                        Err(Mismatch((if_true.position, ty1), (if_false.position, ty2)))
+                        Err(Mismatch(
+                            (if_true.position, ty1),
+                            (if_false.position, ty2),
+                            ctx.into(),
+                        ))
                     } else {
                         Ok(ty1)
                     }
@@ -196,6 +210,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                     Err(Mismatch(
                         (cond.position, NamedType::Boolean),
                         (cond.position, ty),
+                        ctx.into(),
                     ))
                 }
             }
@@ -207,12 +222,14 @@ impl<'a> SpannedToken<'a, Desugared> {
                     return Err(Mismatch(
                         (self.position, NamedType::Integer),
                         (term.position, ty1),
+                        ctx.into(),
                     ));
                 }
                 if ty2 != NamedType::Integer {
                     return Err(Mismatch(
                         (self.position, NamedType::Integer),
                         (term1.position, ty2),
+                        ctx.into(),
                     ));
                 }
                 Ok(NamedType::Integer)
@@ -228,7 +245,11 @@ impl<'a> SpannedToken<'a, Desugared> {
                 use NamedType::*;
                 match (ty1, ty2) {
                     (Integer, Integer) | (Character, Character) | (Boolean, Boolean) => Ok(Boolean),
-                    (ty1, ty2) => Err(CantCompare((term.position, ty1), (term1.position, ty2))),
+                    (ty1, ty2) => Err(CantCompare(
+                        (term.position, ty1),
+                        (term1.position, ty2),
+                        ctx.into(),
+                    )),
                 }
             }
             Char(_) => Ok(NamedType::Character),
@@ -248,6 +269,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                     Err(Mismatch(
                         (t.position, Prod(Box::new(Hole), Box::new(Hole))),
                         (t.position, ty),
+                        ctx.into(),
                     ))
                 }
             }
@@ -261,6 +283,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                     Err(Mismatch(
                         (t.position, Prod(Box::new(Hole), Box::new(Hole))),
                         (t.position, ty),
+                        ctx.into(),
                     ))
                 }
             }
@@ -276,7 +299,11 @@ impl<'a> SpannedToken<'a, Desugared> {
                 use NamedType::*;
                 if let List(ty) = tail_ty {
                     if *ty != head_ty {
-                        return Err(Mismatch((tail.position, *ty), (head.position, head_ty)));
+                        return Err(Mismatch(
+                            (tail.position, *ty),
+                            (head.position, head_ty),
+                            ctx.into(),
+                        ));
                     }
                     return Ok(List(ty));
                 }
@@ -284,6 +311,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                 Err(Mismatch(
                     (self.position, List(Box::new(head_ty))),
                     (tail.position, tail_ty),
+                    ctx.into(),
                 ))
             }
             LCase {
@@ -306,6 +334,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                         Err(Mismatch(
                             (nil_t.position, nil_ty),
                             (cons_t.position, cons_ty),
+                            ctx.into(),
                         ))
                     } else {
                         Ok(nil_ty)
@@ -314,6 +343,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                     Err(Mismatch(
                         (self.position, list(NamedType::Hole)),
                         (t.position, ty),
+                        ctx.into(),
                     ))
                 }
             }
@@ -363,6 +393,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                         Err(Mismatch(
                             (inl_t.position, left_ty),
                             (inr_t.position, right_ty),
+                            ctx.into(),
                         ))
                     } else {
                         Ok(left_ty)
@@ -371,6 +402,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                     Err(Mismatch(
                         (self.position, sum(NamedType::Hole, NamedType::Hole)),
                         (t.position, ty),
+                        ctx.into(),
                     ))
                 }
             }
@@ -379,13 +411,18 @@ impl<'a> SpannedToken<'a, Desugared> {
                 use NamedType::*;
                 if let Arrow(left, right) = ty {
                     if left != right {
-                        return Err(Mismatch((term.position, *left), (self.position, *right)));
+                        return Err(Mismatch(
+                            (term.position, *left),
+                            (self.position, *right),
+                            ctx.into(),
+                        ));
                     }
                     Ok(*left)
                 } else {
                     Err(Mismatch(
                         (self.position, arrow(NamedType::Hole, NamedType::Hole)),
                         (term.position, ty),
+                        ctx.into(),
                     ))
                 }
             }
@@ -413,6 +450,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                             NamedType::Abs("_".to_string(), NamedType::Hole.into()),
                         ),
                         (term.position, ty1),
+                        ctx.into(),
                     ))
                 }
             }
@@ -446,6 +484,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                     Err(Mismatch(
                         (term.position, list(NamedType::Character)),
                         (term.position, ty),
+                        ctx.into(),
                     ))
                 }
             }
@@ -481,6 +520,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                                 Err(Mismatch(
                                     (dom.position, NamedType::IO(ty_cod.into()).into()),
                                     (t.position, ty),
+                                    ctx.into(),
                                 ))
                             }
                         } else {
@@ -490,6 +530,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                         Err(Mismatch(
                             (func.position, NamedType::IO(NamedType::Hole.into())),
                             (func.position, *func_cod),
+                            ctx.into(),
                         ))
                     }
                 } else {
@@ -499,6 +540,7 @@ impl<'a> SpannedToken<'a, Desugared> {
                             NamedType::Arrow(ty_dom.into(), NamedType::IO(ty_cod.into()).into()),
                         ),
                         (func.position, ty_func),
+                        ctx.into(),
                     ))
                 }
             }
@@ -512,7 +554,11 @@ impl<'a> SpannedToken<'a, Desugared> {
                 if ty == ty_term {
                     Ok(NamedType::IO(Box::new(ty_term)))
                 } else {
-                    Err(Mismatch((tty.position, ty), (tterm.position, ty_term)))
+                    Err(Mismatch(
+                        (tty.position, ty),
+                        (tterm.position, ty_term),
+                        ctx.into(),
+                    ))
                 }
             }
 
@@ -579,6 +625,7 @@ impl<'a> Declaration<'a> {
             Err(TypeError::Mismatch(
                 (self.ty.position, declared),
                 (self.term.position, ty),
+                vec![], // Top-level declaration can't be inside a forall
             ))
         } else {
             Ok(ty)

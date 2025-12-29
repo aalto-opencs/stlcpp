@@ -117,68 +117,6 @@ fn unspan(spanned: SpannedToken<'_>) -> Token<'_> {
 }
 
 impl Token<'_> {
-    /// Convert a type parser [`Token`] into a [`NamedType`] using a type-variable context
-    /// (outermost .. innermost) to resolve De Bruijn indices.
-    ///
-    /// This replaces the old free `convert(...)` function.
-    // pub fn to_named_type_ctx(self, mut ctx: Vec<String>) -> Result<NamedType, TypeError<'static>> {
-    //     Ok(match self {
-    //         // Base Types
-    //         Token::Boolean => NamedType::Boolean,
-    //         Token::Integer => NamedType::Integer,
-    //         Token::Character => NamedType::Character,
-    //         Token::Unit => NamedType::Unit,
-    //         Token::Hole => NamedType::Hole,
-
-    //         // Variables
-    //         Token::TVar(name) => {
-    //             // We search for the variable name in ctx.
-    //             // We search from the end (most recently bound) to the beginning.
-    //             if let Some(index_from_start) = ctx.iter().rposition(|v| v == &name) {
-    //                 // De Bruijn index 0 is the current (top) item.
-    //                 // If the vector is [z, y, x], 'x' is at index 2.
-    //                 // dist = 3 - 1 - 2 = 0.
-    //                 let db_index = ctx.len() - 1 - index_from_start;
-    //                 NamedType::Var(db_index)
-    //             } else {
-    //                 // Determine how to handle free variables (variables not found in ctx).
-    //                 // For a standard compiler, this might be a panic or a specific error.
-    //                 // TODO: could this be done on a spanned token so that we can get a position
-    //                 return Err(TypeError::UndefinedVariable(name));
-    //             }
-    //         }
-
-    //         // Abstractions (The core of De Bruijn conversion)
-    //         Token::Forall { var, body } => {
-    //             // 1. Push the variable name onto the stack
-    //             ctx.push(var.clone());
-
-    //             // 2. Recurse on the body with the new environment
-    //             // Note: We need to extract the Token from SpannedToken here
-    //             let body_token = unspan(*body);
-    //             let converted_body = body_token.to_named_type_ctx(ctx.clone())?;
-
-    //             NamedType::Abs(var, Box::new(converted_body))
-    //         }
-
-    //         // Recursive Structural Types
-    //         Token::Arrow(param, body) => NamedType::Arrow(
-    //             Box::new(unspan(*param).to_named_type_ctx(ctx.clone())?),
-    //             Box::new(unspan(*body).to_named_type_ctx(ctx)?),
-    //         ),
-    //         Token::Prod(left, right) => NamedType::Prod(
-    //             Box::new(unspan(*left).to_named_type_ctx(ctx.clone())?),
-    //             Box::new(unspan(*right).to_named_type_ctx(ctx)?),
-    //         ),
-    //         Token::Sum(left, right) => NamedType::Sum(
-    //             Box::new(unspan(*left).to_named_type_ctx(ctx.clone())?),
-    //             Box::new(unspan(*right).to_named_type_ctx(ctx)?),
-    //         ),
-    //         Token::List(inner) => NamedType::List(Box::new(unspan(*inner).to_named_type_ctx(ctx)?)),
-    //         Token::IO(inner) => NamedType::IO(Box::new(unspan(*inner).to_named_type_ctx(ctx)?)),
-    //     })
-    // }
-
     /// Convert a type parser [`Token`] into a [`NamedType`] using:
     /// - a type-variable context (`ctx`, outermost..innermost) for De Bruijn indices, and
     /// - a type-alias environment (`aliases`) for resolving module-level type declarations.

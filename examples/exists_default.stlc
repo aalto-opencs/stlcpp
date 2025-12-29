@@ -1,0 +1,20 @@
+ExistsDefault : Type
+ExistsDefault = forall Y, (forall X, X -> Y) -> Y
+
+// Given an element of type T, returns an existential type ExistsDefault
+pack : forall T, T -> ExistsDefault
+pack = fun T, fun default : T, fun Y, fun get : (forall X, X -> Y), get T default
+
+// Given an existential which has a default, and a function which takes any type X, its default value and produces Y,
+// applies the function to the contained value
+unpack : forall Y, (forall X, X -> Y) -> ExistsDefault -> Y
+unpack = fun Y, fun get : (forall X, X -> Y), fun m : ExistsDefault, m Y get
+
+int.default : ExistsDefault
+int.default = pack Int 0
+
+bool.default : ExistsDefault
+bool.default = pack Bool false
+
+main : Unit
+main = unpack Unit (fun X, fun default : X, let _ = ? default in ()) bool.default

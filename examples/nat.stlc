@@ -68,6 +68,3 @@ fib = fun n : Nat, fst (fib_helper n)
 
 fib' : Int -> Int
 fib' = fun n : Int, decode (fib (encode n))
-
-main : Int
-main = decode (factorial (encode 10))

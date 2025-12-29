@@ -1,3 +1,5 @@
+use std::fmt::{self};
+
 use crate::r#type::named_type::NamedType;
 
 impl std::fmt::Display for Name {
@@ -34,10 +36,27 @@ pub struct Name {
     subscript: Option<usize>,
 }
 
+use crate::context::{Context, Declaration};
+
+impl From<Context> for Vec<Name> {
+    fn from(ctx: Context) -> Self {
+        let mut out: Vec<Name> = Vec::new();
+
+        for decl in ctx.0 {
+            if let Declaration::TVar(n) = decl {
+                let fresh = fresh_name(&out, n);
+                out.push(fresh);
+            }
+        }
+
+        out
+    }
+}
+
 use NamedType::*;
 
 impl NamedType {
-    pub fn fmt_ctx(&self, f: &mut std::fmt::Formatter<'_>, mut ctx: Vec<Name>) -> std::fmt::Result {
+    pub fn fmt_ctx<W: fmt::Write>(&self, f: &mut W, mut ctx: Vec<Name>) -> std::fmt::Result {
         match self {
             Boolean => write!(f, "Bool"),
             Integer => write!(f, "Int"),
@@ -137,5 +156,12 @@ impl NamedType {
                 write!(f, ")")
             }
         }
+    }
+
+    pub fn to_string_ctx(&self, ctx: &Vec<Name>) -> String {
+        let mut s = String::new();
+        self.fmt_ctx(&mut s, ctx.clone())
+            .expect("failed to format NamedType");
+        s
     }
 }

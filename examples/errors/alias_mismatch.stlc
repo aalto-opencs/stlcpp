@@ -1,0 +1,8 @@
+Nat : Type
+Nat = [Unit]
+
+nat.rec2 : forall T, T -> (T -> T) -> Nat -> T
+nat.rec2 = fun T, fun c : T, fun f : T -> T, fun n : Nat,
+    lcase n of
+    | nil => c
+    | cons _ xs => xs

@@ -18,3 +18,6 @@ infixl:25 x && y = bool.and x y
 infixl:26 x || y = bool.or x y
 infixl:26 x ^ y = bool.xor x y
 prefix:19 ! x = bool.not x
+
+bool.to_string : Bool -> String
+bool.to_string = fun b : Bool, if b then "true" else "false"

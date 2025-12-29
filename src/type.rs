@@ -7,20 +7,20 @@ pub mod util;
 
 use crate::{
     parse::Span,
-    r#type::{named_type::NamedType, parse::SpannedToken},
+    r#type::{display::Name, named_type::NamedType, parse::SpannedToken},
 };
 
 #[derive(Debug, Clone)]
 pub enum TypeError<'a> {
     UndefinedVariable(String),
     TAppRightNotClosed(SpannedToken<'a>),
-    NotProperlyFormed(String, (Span<'a>, NamedType)),
+    NotProperlyFormed(String, (Span<'a>, NamedType), Vec<Name>),
     FreeTypeVariable(String),
     Shadowing(String),
     /// (Expected, got)
-    Mismatch((Span<'a>, NamedType), (Span<'a>, NamedType)),
+    Mismatch((Span<'a>, NamedType), (Span<'a>, NamedType), Vec<Name>),
     /// Can't compare ty1 with ty2
-    CantCompare((Span<'a>, NamedType), (Span<'a>, NamedType)),
+    CantCompare((Span<'a>, NamedType), (Span<'a>, NamedType), Vec<Name>),
     // TODO Holes(SpannedToken<'a>),
     UnknownSyntax(Span<'a>, String),
     Holes,
@@ -55,40 +55,56 @@ impl std::fmt::Display for TypeError<'_> {
                 "right-hand-side of type application contains free type variables: {ty}"
             ),
             Shadowing(n) => write!(f, "shadowing is disallowed in types: {n}"),
-            NotProperlyFormed(n, (sp, ty)) => write!(
+            NotProperlyFormed(n, (sp, ty), ctx) => write!(
                 f,
                 "{}",
                 draw_located_span(
                     sp,
                     format!(
-                        "inserting variable '{n} : {ty}' to failed, type is not properly formed because it contains unbound type variables"
+                        "inserting variable '{n} : {}' to failed, type is not properly formed because it contains unbound type variables",
+                        ty.to_string_ctx(ctx)
                     )
                 )
             ),
             FreeTypeVariable(n) => write!(f, "free type variable {n}"),
-            Mismatch((hole, NamedType::Hole), (_, ty))
-            | Mismatch((_, ty), (hole, NamedType::Hole)) => write!(
+            Mismatch((hole, NamedType::Hole), (_, ty), ctx)
+            | Mismatch((_, ty), (hole, NamedType::Hole), ctx) => write!(
                 f,
                 "{}",
                 draw_located_span(
                     hole,
-                    format!("Ran into a hole '_', you probably want to fill it in with {ty}")
+                    format!(
+                        "Ran into a hole '_', you probably want to fill it in with {}",
+                        ty.to_string_ctx(ctx)
+                    )
                 )
             ),
-            Mismatch((span1, ty1), (span2, ty2)) => {
-                writeln!(f, "Expected {ty1} but got {ty2}")?;
+            Mismatch((span1, ty1), (span2, ty2), ctx) => {
+                writeln!(
+                    f,
+                    "Expected {} but got {}",
+                    ty1.to_string_ctx(ctx),
+                    ty2.to_string_ctx(ctx)
+                )?;
                 writeln!(
                     f,
                     "{}",
                     draw_located_span(
                         span2,
-                        format!("This is of type {ty2} while {ty1} was expected")
+                        format!(
+                            "This is of type {} while {} was expected",
+                            ty2.to_string_ctx(ctx),
+                            ty1.to_string_ctx(ctx)
+                        )
                     )
                 )?;
                 writeln!(
                     f,
                     "{}",
-                    draw_located_span(span1, format!("Expected {ty1} due to this"))
+                    draw_located_span(
+                        span1,
+                        format!("Expected {} due to this", ty1.to_string_ctx(ctx))
+                    )
                 )?;
                 match (ty1, ty2) {
                     (NamedType::Arrow(_, _), NamedType::Abs { .. }) => {
@@ -100,17 +116,22 @@ impl std::fmt::Display for TypeError<'_> {
                     _ => Ok(()),
                 }
             }
-            CantCompare((span1, ty1), (span2, ty2)) => {
-                writeln!(f, "Can't compare {ty1} with {ty2}!")?;
+            CantCompare((span1, ty1), (span2, ty2), ctx) => {
+                writeln!(
+                    f,
+                    "Can't compare {} with {}!",
+                    ty1.to_string_ctx(ctx),
+                    ty2.to_string_ctx(ctx)
+                )?;
                 writeln!(
                     f,
                     "{}",
-                    draw_located_span(span1, format!("This is of type {ty1}"))
+                    draw_located_span(span1, format!("This is of type {}", ty1.to_string_ctx(ctx)))
                 )?;
                 write!(
                     f,
                     "{}",
-                    draw_located_span(span2, format!("This is of type {ty2}"))
+                    draw_located_span(span2, format!("This is of type {}", ty2.to_string_ctx(ctx)))
                 )
             }
             UnknownSyntax(_sp, msg) => write!(f, "unknown syntax: {msg}"), // TODO this should probably be a panic instead
