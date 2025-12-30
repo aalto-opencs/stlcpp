@@ -26,7 +26,7 @@ int.to_string = fun n : Int,
   else int.to_string.. "" n
 
 
-int.parse.. : Int -> String -> (Unit + Int)
+int.parse.. : Int -> String -> OptionInt
 int.parse.. = fun n : Int, fun s : String,
   lcase s of
   | nil => inr n Unit
@@ -34,12 +34,10 @@ int.parse.. = fun n : Int, fun s : String,
     | inl v => inl v Int
     | inr i => int.parse.. (n * 10 + i) t
 
-int.parse : String -> (Unit + Int)
+int.parse : String -> OptionInt
 int.parse = fun s : String,
   lcase s of
     | nil => inl () Int
     | cons h t => if h == '-' then
-        case (int.parse.. 0 t) of
-          | inl v => inl v Int
-          | inr n => inr (-n) Unit
+        option.map Int Int (fun n : Int, -n) (int.parse.. 0 t)
       else int.parse.. 0 s

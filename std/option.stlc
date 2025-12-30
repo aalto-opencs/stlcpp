@@ -1,0 +1,27 @@
+import bool
+
+OptionInt : Type
+OptionInt = Unit + Int
+
+OptionString : Type
+OptionString = Unit + String
+
+option.map : forall A, forall B, (A -> B) -> Unit + A -> Unit + B
+option.map = fun A, fun B, fun f : (A -> B), fun opt : Unit + A,
+  case opt of
+    | inl _ => inl () B
+    | inr v => inr (f v) Unit
+
+option.unwrap : forall A, Unit + A -> A
+option.unwrap = fun A, fun opt : Unit + A,
+  case opt of
+    | inl _ => panic A "tried to unwrap a None value"
+    | inr v => v
+
+option.flatten : forall A, Unit + (Unit + A) -> Unit + A
+option.flatten = fun A, fun opt : Unit + (Unit + A),
+  case opt of
+    | inl _ => inl () A
+    | inr inner => case inner of
+      | inl _ => inl () A
+      | inr v => inr v Unit

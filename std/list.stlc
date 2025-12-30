@@ -1,4 +1,4 @@
-import bool
+import option
 
 // Syntax for cons
 infixr x :: xs = cons x xs
