@@ -60,9 +60,7 @@ product = fun xs : [Integer],
 main : Integer
 main = product (3 :: 4 :: 5 :: nil Integer)
 `,
-  "List Operations": `import list
-
-main : [Integer]
+  "List Operations": `main : [Integer]
 main =
   let l = 1 :: 2 :: 3 :: 4 :: 5 :: nil Integer in
   map Integer Integer (fun x : Integer, x * 2) l
@@ -528,7 +526,7 @@ async function main() {
   // - Always persist to the *active named file*.
   // - If an example is pending and the user changes it: create a uniquely named "<Example> (copy N)" and switch to it.
   // - If no active file exists and the user edits non-empty content: create an Untitled file on-demand and save into it.
-  editor.on("change", function (_cm, change) {
+  editor.on("change", function(_cm, change) {
     // CodeMirror calls "change" both for user input and for programmatic setValue.
     // We only want to autosave / create example copies due to *user actions*.
     const origin = change && change.origin;
@@ -645,7 +643,7 @@ async function main() {
   document.getElementById("run-btn").onclick = runCode;
 
   editor.setOption("extraKeys", {
-    "Ctrl-Enter": function (_cm) {
+    "Ctrl-Enter": function(_cm) {
       runCode();
     },
   });
