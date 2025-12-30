@@ -30,5 +30,9 @@ pkgs.testers.runNixOSTest {
     with subtest("io"):
       output = client.succeed("echo 'IO' | stlcpp --exec ${./examples}/io.stlc")
       assert "Hello IO!" in output
+
+    with subtest("rng"):
+      output = client.succeed("echo \":exec rng\n123\" | stlcpp ${./examples}/io.stlc")
+      assert "4759720417705502395" in output
   '';
 }

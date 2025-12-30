@@ -27,3 +27,9 @@ calcfib = io.bind String Unit
 
 main : IO Unit
 main = io.bind Unit Unit (fun _ : Unit, greet) (io.print "What is your name?\n")
+
+readInt : IO Int
+readInt = io.bind String Int (fun s : String, io.pure Int <| unwrap <| int.parse s) io.readline
+
+rng : IO Unit
+rng = io.bind RandomState Unit (fun x : Int, io.print <| int.to_string <| (fun x : (Int, Int), fst x) <| random.rng x) readInt

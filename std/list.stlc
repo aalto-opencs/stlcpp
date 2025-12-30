@@ -256,3 +256,9 @@ index = fun A, fun i : Int, fun l : [A],
   lcase l of
     | nil => panic A "Index out of range"
     | cons h t => if i == 0 then h else index A (i - 1) t
+
+iterate_n : forall A, Int -> (A -> A) -> A -> [A]
+iterate_n = fun A, fun n : Int, fun f : (A -> A), fun e : A,
+  if n == 0 then nil A
+  else let val = f e in
+    val :: iterate_n A (n - 1) f val

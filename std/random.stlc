@@ -1,0 +1,21 @@
+import int
+
+RandomState : Type
+RandomState = Int
+
+random.const_a : Int
+random.const_a = 18446744073709551616
+
+random.const_m : Int
+random.const_m = 6364136223846793005
+
+random.const_c : Int
+random.const_c = 1442695040888963407
+
+// Simple Park-Miller style RNG
+random.rng : RandomState -> (RandomState, Int)
+random.rng = fun s : RandomState,
+  // Seed cannot be 0
+  let s = if s == 0 then 1 else s in
+  let new = (s * random.const_a + random.const_c) % random.const_m in
+  (new, new)

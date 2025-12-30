@@ -1,3 +1,3 @@
-import int
+import random
 
 infixl:10 s <> t = concat Char s t
