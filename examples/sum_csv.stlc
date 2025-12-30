@@ -1,0 +1,18 @@
+
+is_newline : Char -> Bool
+is_newline = fun c : Char, c == '\n'
+
+is_comma : Char -> Bool
+is_comma = fun c : Char, c == ','
+
+lines : String -> [String]
+lines = fun s : String,
+  split Char is_newline s
+
+csv : String -> [String]
+csv = fun s : String,
+  split Char is_comma s
+
+split_rows : [String] -> [[String]]
+split_rows = fun ls : [String],
+  map String [String] csv ls

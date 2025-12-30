@@ -1,6 +1,3 @@
-id : forall T, T -> T
-id = fun T, fun x : T, x
-
 tru : forall T, T -> T -> T
 tru = fun T, fun x : T, fun y : T, x
 
