@@ -3,6 +3,42 @@ use std::marker::PhantomData;
 use crate::parse::*;
 use crate::r#type::tokens::SpannedToken as TSpannedToken;
 
+/// Build a string literal term as a list of characters (`[Char]`), encoded as nested `Cons(Char(_), ...)`
+/// ending in `Nil(Char)`.
+///
+/// This mirrors the encoding used in `term::parse::parse_string_as_list_char`.
+pub fn string_literal_as_list_char<'a, S>(
+    s: impl AsRef<str>,
+    pos: Span<'a>,
+) -> SpannedToken<'a, S> {
+    use crate::r#type::tokens::Token as TyToken;
+
+    let mut acc = SpannedToken {
+        position: pos,
+        token: Token::Nil(TSpannedToken {
+            token: TyToken::Character,
+            position: pos,
+        }),
+        _state: PhantomData,
+    };
+
+    // Right fold so we preserve the original left-to-right order in the resulting list.
+    for c in s.as_ref().chars().rev() {
+        let head = SpannedToken {
+            position: pos,
+            token: Token::Char(c),
+            _state: PhantomData,
+        };
+        acc = SpannedToken {
+            position: pos,
+            token: Token::Cons(Box::new(head), Box::new(acc)),
+            _state: PhantomData,
+        };
+    }
+
+    acc
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Surface;
 

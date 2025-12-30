@@ -8,11 +8,12 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::*,
-    combinator::{cut, eof},
+    combinator::{cut, eof, opt},
     error::ParseError,
     multi::{many0, many1, separated_list1},
 };
 use nom_language::error::VerboseError;
+use nom_locate::position;
 
 use crate::{
     errors::Error,
@@ -108,20 +109,40 @@ pub fn parse_declaration<
     input: Span<'a>,
 ) -> IResult<Span<'a>, (String, TypeSpannedToken<'a>, TermSpannedToken<'a, Surface>), E> {
     (
+        position,
         parse_variable_name, // If variable name parser fails then it's fatal
         ws0(char(':')),
         parse_type,
         space0,
-        newline,
-        parse_variable_name,
-        ws0(char('=')),
-        |input| parse_term(syntaxes, input),
+        opt((newline, parse_variable_name, ws0(char('=')), |input| {
+            parse_term(syntaxes, input)
+        })
+            .map(|(_, var2, _, term)| (var2, term))),
     )
-        .map(|(var1, _, ty, _, _, var2, _, term)| {
-            if var1 == var2 {
-                (var1, ty, term)
+        .map(|(pos, var1, _, ty, _, def)| {
+            if let Some((var2, term)) = def {
+                if var1 == var2 {
+                    (var1, ty, term)
+                } else {
+                    todo!()
+                }
             } else {
-                todo!("handle error in nom")
+                // Build the default panic message *before* moving `var1` into the declaration tuple.
+                let msg = format!("declaration {var1} is unimplemented");
+
+                (
+                    var1,
+                    ty.clone(),
+                    TermSpannedToken {
+                        token: crate::term::tokens::Token::Panic(
+                            false,
+                            ty,
+                            Box::new(crate::term::tokens::string_literal_as_list_char(msg, pos)),
+                        ),
+                        position: pos,
+                        _state: std::marker::PhantomData,
+                    },
+                )
             }
         })
         .parse(input)

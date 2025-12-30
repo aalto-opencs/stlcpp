@@ -1,5 +1,3 @@
-import syntax
-import aliases
 import char
 
 bool.not : Bool -> Bool

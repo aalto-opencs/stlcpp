@@ -1,0 +1,5 @@
+lines : String -> [String]
+
+csv : String -> [String]
+
+filter_parsed : [String + Int] -> [Int]

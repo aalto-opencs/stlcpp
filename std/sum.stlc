@@ -1,0 +1,14 @@
+import list
+
+sum.map : forall A, forall B, forall X, forall Y, (A -> X) -> (B -> Y) -> A + B -> X + Y
+sum.map = fun A, fun B, fun X, fun Y, fun f : A -> X, fun g : B -> Y, fun s : A + B, case s of
+    | inl a => inl (f a) Y
+    | inr b => inr (g b) X
+
+mapl : forall A, forall B, forall C, (A -> C) -> A + B -> C + B
+mapl = fun A, fun B, fun C, fun f : A -> C, fun s : A + B,
+    sum.map A B C B f (id B) s
+
+mapr : forall A, forall B, forall C, (B -> C) -> A + B -> A + C
+mapr = fun A, fun B, fun C, fun f : B -> C, fun s : A + B,
+    sum.map A B A C (id A) f s

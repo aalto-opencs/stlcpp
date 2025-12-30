@@ -183,52 +183,52 @@ fn context_to_indices(ctx: HashSet<String>) -> HashMap<String, usize> {
     ctx.into_iter().enumerate().map(|(i, s)| (s, i)).collect()
 }
 
-impl<'a> SpannedToken<'a> {
-    // FIXME is this really needed? use to_named_type_ctx_with_aliases instead
-    pub fn to_named(&'_ self, ctx: HashSet<String>) -> Result<NamedType, TypeError<'a>> {
-        self.to_named_aux(context_to_indices(ctx))
-    }
+// impl<'a> SpannedToken<'a> {
+//     // FIXME is this really needed? use to_named_type_ctx_with_aliases instead
+//     pub fn to_named(&'_ self, ctx: HashSet<String>) -> Result<NamedType, TypeError<'a>> {
+//         self.to_named_aux(context_to_indices(ctx))
+//     }
 
-    pub fn to_named_aux(
-        &'_ self,
-        mut ctx: HashMap<String, usize>,
-    ) -> Result<NamedType, TypeError<'a>> {
-        use Token::*;
-        Ok(match &self.token {
-            Boolean => NamedType::Boolean,
-            Integer => NamedType::Integer,
-            Character => NamedType::Character,
-            Unit => NamedType::Unit,
-            TVar(v) => {
-                if let Some(i) = ctx.get(v) {
-                    NamedType::Var(*i)
-                } else {
-                    return Err(TypeError::FreeTypeVariable(v.clone()));
-                }
-            }
-            Forall { var, body } => {
-                increment_indices(&mut ctx);
-                ctx.insert(var.clone(), 0);
-                NamedType::Abs(var.clone(), Box::new(body.to_named_aux(ctx)?))
-            }
-            Arrow(ty1, ty2) => NamedType::Arrow(
-                Box::new(ty1.to_named_aux(ctx.clone())?),
-                Box::new(ty2.to_named_aux(ctx)?),
-            ),
-            Prod(ty1, ty2) => NamedType::Prod(
-                Box::new(ty1.to_named_aux(ctx.clone())?),
-                Box::new(ty2.to_named_aux(ctx)?),
-            ),
-            List(ty1) => NamedType::List(Box::new(ty1.to_named_aux(ctx.clone())?)),
-            Sum(ty1, ty2) => NamedType::Sum(
-                Box::new(ty1.to_named_aux(ctx.clone())?),
-                Box::new(ty2.to_named_aux(ctx)?),
-            ),
-            Hole => NamedType::Hole,
-            _ => todo!(),
-        })
-    }
-}
+//     pub fn to_named_aux(
+//         &'_ self,
+//         mut ctx: HashMap<String, usize>,
+//     ) -> Result<NamedType, TypeError<'a>> {
+//         use Token::*;
+//         Ok(match &self.token {
+//             Boolean => NamedType::Boolean,
+//             Integer => NamedType::Integer,
+//             Character => NamedType::Character,
+//             Unit => NamedType::Unit,
+//             TVar(v) => {
+//                 if let Some(i) = ctx.get(v) {
+//                     NamedType::Var(*i)
+//                 } else {
+//                     return Err(TypeError::FreeTypeVariable(v.clone()));
+//                 }
+//             }
+//             Forall { var, body } => {
+//                 increment_indices(&mut ctx);
+//                 ctx.insert(var.clone(), 0);
+//                 NamedType::Abs(var.clone(), Box::new(body.to_named_aux(ctx)?))
+//             }
+//             Arrow(ty1, ty2) => NamedType::Arrow(
+//                 Box::new(ty1.to_named_aux(ctx.clone())?),
+//                 Box::new(ty2.to_named_aux(ctx)?),
+//             ),
+//             Prod(ty1, ty2) => NamedType::Prod(
+//                 Box::new(ty1.to_named_aux(ctx.clone())?),
+//                 Box::new(ty2.to_named_aux(ctx)?),
+//             ),
+//             List(ty1) => NamedType::List(Box::new(ty1.to_named_aux(ctx.clone())?)),
+//             Sum(ty1, ty2) => NamedType::Sum(
+//                 Box::new(ty1.to_named_aux(ctx.clone())?),
+//                 Box::new(ty2.to_named_aux(ctx)?),
+//             ),
+//             Hole => NamedType::Hole,
+//             _ => todo!(),
+//         })
+//     }
+// }
 
 impl std::fmt::Display for NamedType {
     /// Formats a named type.

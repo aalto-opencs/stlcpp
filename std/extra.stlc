@@ -1,1 +1,4 @@
 prefix:1 ? x = trace 99999999 x
+
+id : forall A, A -> A
+id = fun A, fun x : A, x

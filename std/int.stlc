@@ -1,4 +1,4 @@
-import list
+import sum
 
 int.rem : Int -> Int -> Int
 int.rem = fun n : Int, fun m : Int,
