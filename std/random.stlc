@@ -19,3 +19,9 @@ random.rng = fun s : RandomState,
   let s = if s == 0 then 1 else s in
   let new = (s * random.const_a + random.const_c) % random.const_m in
   (new, new)
+
+random.randInt : RandomState -> Int -> Int -> (RandomState, Int)
+random.randInt = fun s : RandomState, fun start : Int, fun end : Int, 
+  let rand = random.rng s in
+  let len = end-start in
+  (fst rand, start + ((snd rand) % len))

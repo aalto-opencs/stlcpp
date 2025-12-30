@@ -262,3 +262,12 @@ iterate_n = fun A, fun n : Int, fun f : (A -> A), fun e : A,
   if n == 0 then nil A
   else let val = f e in
     val :: iterate_n A (n - 1) f val
+
+range : Int -> Int -> [Int]
+range = fun start : Int, fun end : Int,
+  if start > end then panic [Int] "start <= end must be true"
+  else if start == end then [:Int]
+  else start :: range (start + 1) end
+
+infixl:30 x .. y = range x y
+infixl:30 x ..= y = range x (y+1)
