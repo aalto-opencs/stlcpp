@@ -1,0 +1,23 @@
+inc : Int -> Int
+inc = fun x : Int, x + 1
+
+double : Int -> Int
+double = fun x : Int, x * 2
+
+f : Int -> Int
+f = inc . double
+
+g : Int -> Int
+g = double . inc
+
+a : Int
+a = (g . g) 9
+
+b : Int
+b = (f . f . g) 7
+
+c : Int
+c = (f . g . f . f . f . f . g . g) 5
+
+main : Unit + Int
+main = (int.parse . int.to_string . f . g) a
