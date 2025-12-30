@@ -4,7 +4,8 @@ use stlcpp::errors::Error;
 use stlcpp::module::{Import, ModuleTree};
 use stlcpp::parse::{Span, ws0};
 use stlcpp::term::Term;
-use stlcpp::term::parse::{Desugared, SpannedToken, parse_term};
+use stlcpp::term::parse::parse_term;
+use stlcpp::term::tokens::{Desugared, SpannedToken};
 use stlcpp::r#type::named_type::NamedType;
 
 use std::process::exit;

@@ -5,7 +5,7 @@ use crate::{
     errors::Error,
     parse::Span,
     syntax::Syntaxes,
-    term::parse::{Desugared, SpannedToken, Surface, Token},
+    term::tokens::{Desugared, SpannedToken, Surface, Token},
 };
 
 impl<'a> SpannedToken<'a, Surface> {

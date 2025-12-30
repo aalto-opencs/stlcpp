@@ -5,7 +5,7 @@ use nom_language::precedence::{Assoc, Binary, Unary};
 use nom_locate::position;
 
 use crate::parse::{Span, alt_iter_longest};
-use crate::term::parse::SpannedToken as TermSpannedToken;
+use crate::term::tokens::SpannedToken as TermSpannedToken;
 
 pub mod parse;
 

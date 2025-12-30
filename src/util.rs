@@ -1,6 +1,6 @@
 //! Crate-level utilities intended primarily for tests and doctests.
 //!
-//! The core type checker is implemented for desugared `term::parse::SpannedToken<Desugared>`.
+//! The core type checker is implemented for desugared `term::tokens::SpannedToken<Desugared>`.
 //! In tests/doctests you often start from a source string and want to:
 //! 1) parse a surface term (`parse_term`),
 //! 2) desugar custom syntax / infix sugar (`desugar_term`),
@@ -13,7 +13,10 @@ use crate::syntax::Syntaxes;
 
 use crate::{
     parse::Span,
-    term::parse::{Desugared, SpannedToken, parse_term},
+    term::{
+        parse::parse_term,
+        tokens::{Desugared, SpannedToken},
+    },
     r#type::{TypeError, named_type::NamedType},
 };
 
@@ -24,7 +27,7 @@ use crate::{
 pub fn parse_surface_term<'a>(
     syntaxes: &Syntaxes,
     src: &'a str,
-) -> Result<crate::term::parse::SurfaceSpannedToken<'a>, String> {
+) -> Result<crate::term::tokens::SpannedToken<'a, crate::term::tokens::Surface>, String> {
     parse_term::<nom::error::Error<Span<'a>>>(syntaxes, Span::new_extra(src, src))
         .map(|(_rest, t)| t)
         .map_err(|e| format!("parse_term failed: {e:?}"))
@@ -35,7 +38,7 @@ pub fn parse_surface_term<'a>(
 pub fn parse_surface_term_eof<'a>(
     syntaxes: &Syntaxes,
     src: &'a str,
-) -> Result<crate::term::parse::SurfaceSpannedToken<'a>, String> {
+) -> Result<crate::term::tokens::SpannedToken<'a, crate::term::tokens::Surface>, String> {
     let (rest, t) = parse_term::<nom::error::Error<Span<'a>>>(syntaxes, Span::new_extra(src, src))
         .map_err(|e| format!("parse_term failed: {e:?}"))?;
 

@@ -19,12 +19,13 @@ use crate::{
     module::{Module, ModuleTree},
     parse::*,
     syntax::{parse::*, *},
-    term::parse::{
-        SpannedToken as TermSpannedToken, Surface, parse_comment, parse_term, parse_variable_name,
+    term::{
+        parse::{parse_comment, parse_term, parse_variable_name},
+        tokens::{SpannedToken as TermSpannedToken, Surface},
     },
     r#type::{
-        parse::SpannedToken as TypeSpannedToken, parse::parse_sort, parse::parse_type,
-        parse::parse_type_variable_name,
+        parse::{parse_sort, parse_type, parse_type_variable_name},
+        tokens::SpannedToken as TypeSpannedToken,
     },
 };
 

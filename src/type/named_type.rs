@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::r#type::{
     TypeError,
-    parse::{SpannedToken, Token},
+    tokens::{SpannedToken, Token},
 };
 
 /// A named type is a De Bruijn type where abstractions give names to variables.

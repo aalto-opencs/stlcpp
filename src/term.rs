@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    term::parse::{Desugared, Token},
+    term::tokens::{Desugared, Token},
     r#type::TypeError,
     r#type::named_type::NamedType,
 };
@@ -12,6 +12,7 @@ pub mod exec;
 pub mod parse;
 pub mod step;
 pub mod subst;
+pub mod tokens;
 pub mod util;
 
 /// Represents a lambda calculus term.

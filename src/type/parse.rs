@@ -16,40 +16,7 @@ use nom_locate::position;
 use super::super::parse::*;
 use crate::RESERVED_KEYWORDS;
 use crate::term::parse::parse_comment;
-
-#[non_exhaustive]
-#[derive(Debug, Clone)]
-pub enum Token<'a> {
-    Boolean,
-    Integer,
-    Character,
-    Unit,
-
-    Arrow(Box<SpannedToken<'a>>, Box<SpannedToken<'a>>),
-    Prod(Box<SpannedToken<'a>>, Box<SpannedToken<'a>>),
-    List(Box<SpannedToken<'a>>),
-    Sum(Box<SpannedToken<'a>>, Box<SpannedToken<'a>>),
-    TVar(String),
-    Forall {
-        var: String,
-        body: Box<SpannedToken<'a>>,
-    },
-    Hole,
-    IO(Box<SpannedToken<'a>>),
-}
-
-/// TYPE x Span
-#[derive(Debug, Clone)]
-pub struct SpannedToken<'a> {
-    pub token: Token<'a>,
-    pub position: Span<'a>,
-}
-
-impl<'a> SpannedToken<'a> {
-    pub fn new((position, token): (Span<'a>, Token<'a>)) -> Self {
-        Self { token, position }
-    }
-}
+use crate::r#type::tokens::{SpannedToken, Token};
 
 use Token::*;
 

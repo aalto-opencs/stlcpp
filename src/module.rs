@@ -26,9 +26,9 @@ use crate::errors::Error;
 use crate::parse::Span;
 use crate::syntax::Syntaxes;
 use crate::term::Term::{self};
-use crate::term::parse::{Desugared, SpannedToken, Token};
+use crate::term::tokens::{Desugared, SpannedToken, Token};
 use crate::r#type::named_type::NamedType;
-use crate::r#type::parse::SpannedToken as TSpannedToken;
+use crate::r#type::tokens::SpannedToken as TSpannedToken;
 use parse::parse_module;
 
 pub mod parse;

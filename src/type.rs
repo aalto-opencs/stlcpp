@@ -3,11 +3,12 @@ pub mod display;
 pub mod named_type;
 pub mod parse;
 pub mod subst;
+pub mod tokens;
 pub mod util;
 
 use crate::{
     parse::Span,
-    r#type::{display::Name, named_type::NamedType, parse::SpannedToken},
+    r#type::{display::Name, named_type::NamedType, tokens::SpannedToken},
 };
 
 #[derive(Debug, Clone)]

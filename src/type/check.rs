@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::TypeError::{self, *};
 use crate::context::Context;
 use crate::module::{Declaration, Module, ModuleTree};
-use crate::term::parse::{
+use crate::term::tokens::{
     Desugared, SpannedToken,
     Token::{self, *},
 };
@@ -583,7 +583,7 @@ impl<'a> SpannedToken<'a, Desugared> {
     }
 }
 
-impl super::parse::SpannedToken<'_> {
+impl crate::r#type::tokens::SpannedToken<'_> {
     pub fn contains_holes(&self) -> bool {
         self.token
             .clone()
