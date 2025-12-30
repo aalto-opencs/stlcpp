@@ -1,0 +1,49 @@
+fire : String
+fire = "EA=="
+
+stop : String
+stop = "IA=="
+
+up : String
+up = "Ag=="
+
+down : String
+down = "AQ=="
+
+left : String
+left = "BA=="
+
+right : String
+right = "CA=="
+
+// TODO
+// LAUNCHER_UP_LEFT     (0x06) → Bg==
+// LAUNCHER_DOWN_LEFT   (0x05) → BQ==
+// LAUNCHER_UP_RIGHT    (0x0A) → Cg==
+// LAUNCHER_DOWN_RIGHT  (0x09) → CQ==
+
+send_command : String -> IO Bool
+send_command = fun s : String, lcase s of
+  | nil => io.pure Bool true
+  | cons _ _ => io.bind Unit Bool (fun _ : Unit, io.pure Bool false) (io.print (s <> "\n"))
+
+decode_command : String -> String
+decode_command = fun s : String,
+  let eq = (fun x : String, fun y : String, list.cmp Char char.cmp x y == 0) in
+  if eq s "u" || eq s "up" then up
+  else if eq s "f" || eq s "fire" then fire
+  else if eq s "s" || eq s "stop" then stop
+  else if eq s "d" || eq s "down" then down
+  else if eq s "l" || eq s "left" then left
+  else if eq s "r" || eq s "right" then right
+  else ""
+
+command : IO Bool
+command = io.bind String Bool
+  (send_command . decode_command)
+  (io.readline)
+
+main : IO Unit
+main = io.bind Bool Unit
+  (fun term : Bool, if term then io.pure Unit () else main)
+  command
