@@ -42,6 +42,8 @@ fn step_op2(
 fn eval_app(t1: Box<Term>, t2: Box<Term>) -> Term {
     if let Abs { var, ty: _, body } = *t1 {
         body.subst(&var, *t2)
+    } else if let Compose(f, g) = *t1 {
+        App(f, Box::new(App(g, t2)))
     } else {
         panic!("BUG: attempted to apply non abstraction to a value");
     }
@@ -49,6 +51,10 @@ fn eval_app(t1: Box<Term>, t2: Box<Term>) -> Term {
 
 fn eval_let(val_t: Box<Term>, var: impl AsRef<str>, body: Box<Term>) -> Term {
     body.subst(var.as_ref(), *val_t)
+}
+
+fn eval_comp(_: Box<Term>, _: Box<Term>) -> Term {
+    panic!("BUG: attempted to step a composition")
 }
 
 fn eval_ite(cond: Box<Term>, if_true: Box<Term>, if_false: Box<Term>) -> Term {
@@ -232,6 +238,8 @@ impl Term {
                 val_t,
                 env,
             ),
+
+            Compose(t1, t2) => step_op2(Compose, eval_comp, t1, t2, env),
 
             Ite {
                 cond,

@@ -41,6 +41,9 @@ pub enum Term {
         body: Box<Term>,
     },
 
+    /// Function composition
+    Compose(Box<Term>, Box<Term>),
+
     /// A true boolean value
     True,
     /// A false boolean value
@@ -240,7 +243,7 @@ impl Term {
             | Char(_)
             | Trivial
             | ReadLine => true,
-            Pair(t1, t2) | Cons(t1, t2) => t1.is_value() && t2.is_value(),
+            Pair(t1, t2) | Cons(t1, t2) | Compose(t1, t2) => t1.is_value() && t2.is_value(),
             Inl(t, _) | Inr(t, _) => t.is_value(),
             Panic(true, _, _) => true,
             Print(t) => t.is_value(),
@@ -351,6 +354,10 @@ impl Token<'_, Desugared> {
                 val_t: Box::new(val_t.token.to_term_ctx_with_aliases(ctx.clone(), aliases)?),
                 body: Box::new(body.token.to_term_ctx_with_aliases(ctx, aliases)?),
             },
+            Token::Compose(t1, t2) => Term::Compose(
+                Box::new(t1.token.to_term_ctx_with_aliases(ctx.clone(), aliases)?),
+                Box::new(t2.token.to_term_ctx_with_aliases(ctx, aliases)?),
+            ),
             Token::True => Term::True,
             Token::False => Term::False,
             Token::Ite {

@@ -69,6 +69,10 @@ impl<'a> SpannedToken<'a, Surface> {
                 val_t: Box::new(val_t.desugar(syntaxes)?),
                 body: Box::new(body.desugar(syntaxes)?),
             },
+            Compose(t1, t2) => Compose(
+                Box::new(t1.desugar(syntaxes)?),
+                Box::new(t2.desugar(syntaxes)?),
+            ),
             Ite {
                 cond,
                 if_true,
@@ -231,6 +235,10 @@ fn subst_template_at_pos<'a>(
             val_t: Box::new(rec(&val_t.token, env)?),
             body: Box::new(rec(&body.token, env)?),
         },
+        Compose(t1, t2) => Compose(
+            Box::new(rec(&t1.token, env)?),
+            Box::new(rec(&t2.token, env)?),
+        ),
         Ite {
             cond,
             if_true,

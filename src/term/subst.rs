@@ -166,6 +166,10 @@ impl Term {
                 map.remove(var.as_str());
                 body.subst_all(map);
             }
+            Compose(t1, t2) => {
+                t1.subst_all(map.clone());
+                t2.subst_all(map);
+            }
             Ite {
                 cond,
                 if_true,
@@ -307,6 +311,10 @@ impl Term {
                 var,
                 val_t: Box::new(val_t.subst_ty(x, v_ty)),
             },
+            Compose(t1, t2) => Compose(
+                Box::new(t1.subst_ty(x, v_ty.clone())),
+                Box::new(t2.subst_ty(x, v_ty)),
+            ),
             Ite {
                 cond,
                 if_true,
@@ -436,6 +444,10 @@ impl Term {
                 val_t: Box::new(val_t.unshift_ty(amount, cutoff)?),
                 body: Box::new(body.unshift_ty(amount, cutoff)?),
             }),
+            Compose(t1, t2) => Some(Compose(
+                Box::new(t1.unshift_ty(amount, cutoff)?),
+                Box::new(t2.unshift_ty(amount, cutoff)?),
+            )),
             True => Some(True),
             False => Some(False),
             Ite {

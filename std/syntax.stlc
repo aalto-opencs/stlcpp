@@ -12,5 +12,6 @@ infixl:20 x >= y = __ge x y
 infixl:20 x <= y = __le x y
 prefix:10 - x = 0 - x
 
+infixr:40 g . f = __comp g f
 infixr:50 f <| x = f x
 infixl:50 x |> f = f x

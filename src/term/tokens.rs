@@ -31,6 +31,9 @@ pub enum Token<'a, S = Surface> {
         body: Box<SpannedToken<'a, S>>,
     },
 
+    /// Function composition
+    Compose(Box<SpannedToken<'a, S>>, Box<SpannedToken<'a, S>>),
+
     /// A true boolean value
     True,
     /// A false boolean value

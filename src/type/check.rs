@@ -41,7 +41,8 @@ impl<'a> SpannedToken<'a, Desugared> {
             | Gt(t1, t2)
             | Ge(t1, t2)
             | Pair(t1, t2)
-            | Cons(t1, t2) => t1.contains_holes_token() || t2.contains_holes_token(),
+            | Cons(t1, t2)
+            | Compose(t1, t2) => t1.contains_holes_token() || t2.contains_holes_token(),
 
             Let { val_t, body, .. } => val_t.contains_holes_token() || body.contains_holes_token(),
 
@@ -187,6 +188,43 @@ impl<'a> SpannedToken<'a, Desugared> {
                 ctx.insert(var.clone(), ty);
                 body.infer_type(ctx, aliases)
             }
+
+            Compose(g, f) => {
+                let ty_g = g.infer_type(ctx.clone(), aliases)?;
+                let ty_f = f.infer_type(ctx.clone(), aliases)?;
+
+                use NamedType::*;
+
+                match (ty_g, ty_f) {
+                    (Arrow(g_dom, g_cod), Arrow(f_dom, f_cod)) => {
+                        if *f_cod == *g_dom {
+                            Ok(Arrow(f_dom, g_cod))
+                        } else {
+                            Err(Mismatch(
+                                (f.position, Arrow(f_cod, Hole.into())),
+                                (g.position, Arrow(g_dom, g_cod)),
+                                ctx.into(),
+                            ))
+                        }
+                    }
+                    (Arrow(g_dom, _g_cod), ty_f) => Err(Mismatch(
+                        (g.position, Arrow(g_dom, Hole.into())),
+                        (f.position, ty_f),
+                        ctx.into(),
+                    )),
+                    (ty_g, Arrow(_f_dom, f_cod)) => Err(Mismatch(
+                        (f.position, Arrow(f_cod, Hole.into())),
+                        (g.position, ty_g),
+                        ctx.into(),
+                    )),
+                    (_ty_g, ty_f) => Err(Mismatch(
+                        (self.position, Arrow(Hole.into(), Hole.into())),
+                        (f.position, ty_f),
+                        ctx.into(),
+                    )),
+                }
+            }
+
             True | False => Ok(NamedType::Boolean),
             Ite {
                 cond,

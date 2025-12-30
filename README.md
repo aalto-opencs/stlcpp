@@ -1,31 +1,23 @@
 # STLC++
 
-## TODO
+## Archictecture
 
-- fix duplicate declaration error
-- make type variables and term variables use a different string newtype to avoid confusion
-- add type level syntax. this allows us to write `[a] = List a` and helps with defining custom types
-  - Note: this probably requires a subst_ty_all in Term
+### Tokens, terms and types
 
-- Try to get rid of 'b in     syntaxes: &'b [Syntax]
-
-- support fun short-hand
-  fun (A) (x : A) (y : A), x + y
-  -> fun A, fun x : A, fun y : A, x + y
+Tokens, terms and types are all separate objects in the codebase:
+- Tokens are split into two categories: term tokens and type tokens.
+  - Term tokens have a type state of `Surface` and `Desugared`, where `Surface` tokens may contain custom syntax/operators, but `Desugared` may not.
+- (Core) terms (from `src/term.rs`) are what are ultimately evaluated
+- Types (from `src/type/named_type.rs`) are the result of type checking desugared term tokens.
 
 ## Type shadowing
 
 Question: How to deal with type shadowing? E.g. `(fun A, fun B, fun x : A, x) (forall B, B -> B)` reduces into a term with type shadowing, but it should be sound
 Answer: Types are De Bruijn indexed but retain human-readable names in order to format them nicely. During formatting, shadowed types automatically get a subscript `_1`, `_2` etc if necessary.
 
-### Namespaces
+## Namespaces
 
-Naming convention:
-- `TypeName.func1`
-- `A.B.C.func`
-- `A.b`
-
-#### Gleam style namespaces / modules
+### Gleam style namespaces / modules
 ```stlc
 int.to_bool :: Int -> Bool
 ```

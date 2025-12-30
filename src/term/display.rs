@@ -152,6 +152,13 @@ impl Term {
                 write!(f, " in ")?;
                 body.fmt_ctx(f, ctx)
             }
+            Compose(t1, t2) => {
+                write!(f, "(")?;
+                t1.fmt_ctx(f, ctx.clone())?;
+                write!(f, " . ")?;
+                t2.fmt_ctx(f, ctx)?;
+                write!(f, ")")
+            }
             True => write!(f, "true"),
             False => write!(f, "false"),
             Ite {

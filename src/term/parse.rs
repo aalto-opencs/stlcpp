@@ -605,6 +605,7 @@ macro_rules! make_binary_parser {
 }
 
 make_binary_parser!(parse_cons, "cons", Cons);
+make_binary_parser!(parse_comp, "__comp", Compose);
 make_binary_parser!(parse_add, "__add", Add);
 make_binary_parser!(parse_sub, "__sub", Sub);
 make_binary_parser!(parse_mul, "__mul", Mul);
@@ -630,6 +631,7 @@ fn parse_binary_ops<
     input: Span<'a>,
 ) -> IResult<Span<'a>, SpannedToken<'a>, E> {
     alt((
+        |input| parse_comp(syntaxes, input),
         |input| parse_add(syntaxes, input),
         |input| parse_sub(syntaxes, input),
         |input| parse_mul(syntaxes, input),
