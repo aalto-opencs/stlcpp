@@ -362,7 +362,7 @@ impl Term {
     }
 
     pub fn multistep(mut self, env: &HashMap<String, Term>) -> Self {
-        while !self.is_value() {
+        while !self.is_value() && !self.is_err() {
             self = self.step(env)
         }
         self

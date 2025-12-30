@@ -245,10 +245,11 @@ impl Term {
             | ReadLine => true,
             Pair(t1, t2) | Cons(t1, t2) | Compose(t1, t2) => t1.is_value() && t2.is_value(),
             Inl(t, _) | Inr(t, _) => t.is_value(),
-            Panic(true, _, _) => true,
             Print(t) => t.is_value(),
             IOPure(_, t) => t.is_value(),
             IOBind { func, t, .. } => func.is_value() && t.is_value(),
+            // A fully-triggered panic is an error term but not a value, otherwise we may end up with values like `[<panic>, 1]` which should be `<panic>` instead.
+            Panic(true, _, _) => false,
             Var(_) => false, // Not value because of env in step
             _ => false,
         }

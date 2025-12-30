@@ -294,11 +294,9 @@ impl Term {
                 write!(f, " ")?;
                 ty.fmt_ctx(f, ctx)
             }
-            Panic(_, ty, t) => {
-                write!(f, "panic ")?;
-                ty.fmt_ctx(f, ctx.clone())?;
-                write!(f, " ")?;
-                t.fmt_ctx(f, ctx)
+            Panic(_, _ty, _t) => {
+                write!(f, "<panic>")
+                // Note: we don't display the types nor terms to avoid confusion.
             }
             Trace(i, t) => {
                 write!(f, "trace {i} ")?;
