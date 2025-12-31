@@ -19,6 +19,7 @@ pkgs.testers.runNixOSTest {
 
     with subtest("std"):
       client.succeed("echo 'map' | stlcpp")
+      client.succeed("stlcpp --eval map")
 
     for example in os.listdir("${./examples}"):
       filename = os.fsdecode(example)

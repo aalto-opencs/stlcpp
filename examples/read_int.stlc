@@ -1,0 +1,12 @@
+readInt : IO Int
+readInt = io.bind String Int
+    (fun s : String, case int.parse s of
+      | inl _ => io.pure Int 0
+      | inr n => io.pure Int n)
+    io.readline
+
+printGuess : Int -> IO Unit
+printGuess = fun n : Int, io.print ("Your number: " <> int.to_string n)
+
+main : IO Unit
+main = io.bind Int Unit printGuess readInt

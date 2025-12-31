@@ -8,12 +8,10 @@ use stlcpp::term::parse::parse_term;
 use stlcpp::term::tokens::{Desugared, SpannedToken};
 use stlcpp::r#type::named_type::NamedType;
 
+use std::path::{Path, PathBuf};
 use std::process::exit;
-use std::{
-    env::args,
-    path::{Path, PathBuf},
-};
 
+use clap::Parser as ClapParser;
 use rustyline::{DefaultEditor, error::ReadlineError};
 
 fn history_path() -> Option<PathBuf> {
@@ -237,55 +235,62 @@ fn prelude() -> Result<ModuleTree, Error> {
     )
 }
 
+#[derive(ClapParser, Debug)]
+#[command(
+    name = "stlcpp",
+    about = "STLC++, a functional language for teaching PL design"
+)]
+struct Cli {
+    /// Disable persistent REPL history
+    #[arg(long)]
+    no_history: bool,
+
+    /// Execute module's `main` (requires a file argument)
+    #[arg(long, conflicts_with = "eval")]
+    exec: bool,
+
+    /// Evaluate a single expression (in a module's context if a file is loaded)
+    #[arg(long, value_name = "EXPR", conflicts_with = "exec")]
+    eval: Option<String>,
+
+    /// Optional module file to load before starting REPL / eval / exec
+    file: Option<String>,
+}
+
 fn main_res() -> Result<bool, Box<dyn std::error::Error>> {
-    let mut args = args();
-    let _exe = args.next();
-
-    let mut no_history = false;
-    let mut exec = false;
-    let mut file: Option<String> = None;
-
-    for arg in args {
-        // TODO use structopt and clap
-        match arg.as_str() {
-            "--no-history" => no_history = true,
-            "--exec" => exec = true,
-            _ if arg.starts_with('-') => {
-                panic!("unknown flag '{arg}'")
-            }
-            _ => {
-                // First non-flag argument is treated as the module path
-                file = Some(arg);
-                break;
-            }
-        }
-    }
+    let cli = Cli::parse();
 
     let p = prelude()?;
     p.type_check()?;
 
-    Ok(match file {
+    // Helper: load module if a file is provided, otherwise just use prelude context.
+    let (file_name, module_tree) = match cli.file.as_deref() {
         Some(name) => {
-            let i = Import(PathBuf::from(&name));
+            let i = Import(PathBuf::from(name));
             let mt = i.resolve(PathBuf::default(), &p)?;
-
             mt.type_check()?;
-
-            if exec {
-                mt.exec_main()?;
-                false
-            } else {
-                start_repl(Some(&name), mt, no_history)?
-            }
+            (Some(name), mt)
         }
-        None => {
-            if exec {
-                panic!("argument --exec requires a file argument");
-            }
+        None => (None, p),
+    };
 
-            start_repl(None, p, no_history)?
+    // --exec: run main (requires file)
+    if cli.exec {
+        if cli.file.is_none() {
+            return Err("argument --exec requires a file argument".into());
         }
-    })
+        module_tree.exec_main()?;
+        return Ok(false);
+    }
+
+    // --eval: evaluate expression once (optionally in loaded module context)
+    if let Some(expr) = cli.eval {
+        process(expr.leak(), &module_tree)?;
+        return Ok(false);
+    }
+
+    // Default: start REPL
+    start_repl(file_name, module_tree, cli.no_history)
 }
 
 fn main() {

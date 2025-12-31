@@ -12,6 +12,7 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+clap = { version = "4.5.23", features = ["derive"] }
 console_error_panic_hook = "0.1.7"
 include_dir = "0.7.4"
 nom = "8.0.0"
