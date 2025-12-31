@@ -14,6 +14,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub enum TypeError<'a> {
     UndefinedVariable(String),
+    DuplicateDeclaration(String),
     TAppRightNotClosed(SpannedToken<'a>),
     NotProperlyFormed(String, (Span<'a>, NamedType), Vec<Name>),
     FreeTypeVariable(String),
@@ -50,6 +51,7 @@ pub(crate) fn draw_located_span(span: &Span<'_>, message: String) -> String {
 impl std::fmt::Display for TypeError<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            DuplicateDeclaration(msg) => write!(f, "{msg}"),
             UndefinedVariable(x) => write!(f, "undefined variable: {x}"),
             TAppRightNotClosed(ty) => write!(
                 f,

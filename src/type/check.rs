@@ -686,7 +686,10 @@ impl Module {
     ) -> Result<HashMap<String, NamedType>, TypeError<'static>> {
         for d in &self.declarations {
             if ctx.contains_key(&d.name) {
-                panic!("duplicate declaration: {}", d.name)
+                return Err(TypeError::DuplicateDeclaration(format!(
+                    "Duplicate declaration: {}",
+                    d.name
+                )));
             }
             let ty = d.type_check(ctx.clone(), aliases)?;
             ctx.insert(d.name.clone(), ty);
