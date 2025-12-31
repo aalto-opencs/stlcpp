@@ -1,7 +1,7 @@
 import option
 
 // Syntax for cons
-infixr x :: xs = cons x xs
+infixr:20 x :: xs = cons x xs
 
 // Get all list elements except the last one
 tail : forall A, [A] -> [A]
