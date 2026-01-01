@@ -1,8 +1,8 @@
 readInt : IO Int
 readInt = io.bind String Int
     (fun s : String, case int.parse s of
-      | inl _ => io.pure Int 0
-      | inr n => io.pure Int n)
+        | inl _ => io.pure Int 0
+        | inr n => io.pure Int n)
     io.readline
 
 printGuess : Int -> IO Unit

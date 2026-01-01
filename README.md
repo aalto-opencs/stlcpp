@@ -1,4 +1,24 @@
-# STLC++
+# 𝕊𝕋𝕃ℂ++
+
+## Building from Source
+
+### Nix
+
+If you have [Nix](https://nixos.org) installed, you can build $stlcpp$ with just a single command
+
+```
+nix-build -I stlcpp=https://github.com/aalto-opencs/stlcpp/archive/main.tar.gz -E "import <stlcpp> {}" -A package
+```
+
+You can then find the `stlcpp` binary in `result/bin/stlcpp`.
+
+### Rust
+
+Clone [the repository](https://github.com/aalto-opencs/stlcpp) and run
+
+```
+cargo build
+```
 
 ## Archictecture
 
@@ -26,16 +46,6 @@ int.to_bool :: Int -> Bool
 
 - Parser is not very robust
     - declarations must be separated by exactly one empty line
-
-- The following fails to parse
-
-```
-reverse : [Integer] -> [Integer]
-reverse = fun xs : [Integer],
-    lcase xs of
-    | nil => nil Integer
-    | cons x xs => append (reverse xs) (cons x (nil Integer))
-```
 
 ## Adding cuts
 
