@@ -1,0 +1,5 @@
+Empty : Type
+Empty = forall X, X
+
+absurd : Empty
+absurd = panic Empty "absurd encountered"
