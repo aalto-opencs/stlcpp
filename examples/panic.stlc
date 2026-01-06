@@ -3,3 +3,6 @@ example = if (panic Bool "panik") then 5 else 6
 
 example2 : Int
 example2 = let x = (panic Bool "panik2") in (panic (Bool -> Int) "panik1") x
+
+example3 : Int
+example3 = 42 / 0

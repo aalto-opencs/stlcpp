@@ -28,16 +28,19 @@ python playground/server.py
 ## Running the REPL
 
 ```bash
-# Start REPL with prelude
+# Start interactive REPL with prelude
 cargo run
 
-# Load a module file
+# Load a module file into REPL
 cargo run -- examples/simple.stlc
 
-# Evaluate expression
-cargo run -- --eval "1 + 2"
+# Evaluate expression (pipe to stdin)
+echo "1 + 2" | cargo run
 
-# Execute module's main function
+# Evaluate expression in a module's context
+echo "42" | cargo run -- examples/simple.stlc
+
+# Execute module's main function (for IO programs)
 cargo run -- --exec examples/io.stlc
 ```
 

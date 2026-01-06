@@ -91,7 +91,13 @@ fn eval_mul(t1: Box<Term>, t2: Box<Term>) -> Term {
 
 fn eval_div(t1: Box<Term>, t2: Box<Term>) -> Term {
     if let (Int(n1), Int(n2)) = (t1.as_ref(), t2.as_ref()) {
-        Int(n1 / n2)
+        use num_bigint::BigInt;
+        if *n2 == BigInt::from(0) {
+            eprintln!("*** STLC++ PANIC: division by zero");
+            Panic(true, NamedType::Integer, Box::new(Int(n1.clone())))
+        } else {
+            Int(n1 / n2)
+        }
     } else {
         panic!("BUG: attempted to div non integers")
     }
