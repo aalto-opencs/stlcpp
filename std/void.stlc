@@ -1,0 +1,11 @@
+Void : Type
+Void = forall X, X
+
+error : String -> Void
+error = fun msg : String, panic Void msg
+
+undefined : Void
+undefined = error "undefined encountered"
+
+todo : Void
+todo = error "todo encountered"

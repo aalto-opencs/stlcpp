@@ -1,6 +1,6 @@
 import syntax
 import aliases
-import empty
+import void
 
 char.cmp : Char -> Char -> Int
 char.cmp = fun a : Char, fun b : Char,
