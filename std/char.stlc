@@ -1,5 +1,4 @@
 import syntax
-import aliases
 import void
 
 char.cmp : Char -> Char -> Int
