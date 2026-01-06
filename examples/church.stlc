@@ -1,26 +1,35 @@
-tru : forall T, T -> T -> T
+CBool : Type
+CBool = forall T, T -> T -> T
+
+tru : CBool
 tru = fun T, fun x : T, fun y : T, x
 
-fals : forall T, T -> T -> T
+fals : CBool
 fals = fun T, fun x : T, fun y : T, y
 
-cnot : (forall T, T -> T -> T) -> (forall T, T -> T -> T)
-cnot = fun b : (forall T, T -> T -> T), fun T, fun x : T, fun y : T, b T y x
+cnot : CBool -> CBool
+cnot = fun b : CBool, fun T, fun x : T, fun y : T, b T y x
 
-unchurchbool : (forall T, T -> T -> T) -> Bool
-unchurchbool = fun b : (forall T, T -> T -> T), b Bool true false
+unchurchbool : CBool -> Bool
+unchurchbool = fun b : CBool, b Bool true false
 
-zero : forall T, (T -> T) -> T -> T
+CNat : Type
+CNat = forall T, (T -> T) -> T -> T
+
+zero : CNat
 zero = fun T, fun f : T -> T, fun x : T, x
 
-succ : (forall T, (T -> T) -> T -> T) -> (forall T, (T -> T) -> T -> T)
-succ = fun n : (forall T, (T -> T) -> T -> T), fun T, fun f : T -> T, fun x : T, f (n T f x)
+succ : CNat -> CNat
+succ = fun n : CNat, fun T, fun f : T -> T, fun x : T, f (n T f x)
 
-one : forall T, (T -> T) -> T -> T
+one : CNat
 one = succ zero
 
-cadd : (forall T, (T -> T) -> T -> T) -> (forall T, (T -> T) -> T -> T) -> (forall T, (T -> T) -> T -> T)
-cadd = fun a : (forall T, (T -> T) -> T -> T), fun b : (forall T, (T -> T) -> T -> T), fun T, fun f : T -> T, fun x : T, a T f (b T f x)
+cadd : CNat -> CNat -> CNat
+cadd = fun a : CNat, fun b : CNat, fun T, fun f : T -> T, fun x : T, a T f (b T f x)
 
-unchurchnat : (forall T, (T -> T) -> T -> T) -> Int
-unchurchnat = fun n : (forall T, (T -> T) -> T -> T), n Int (fun x : Int, x + 1) 0
+unchurchnat : CNat -> Int
+unchurchnat = fun n : CNat, n Int (fun x : Int, x + 1) 0
+
+example : Int
+example = unchurchnat (cadd one one)

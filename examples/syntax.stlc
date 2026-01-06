@@ -1,10 +1,10 @@
 infixr f $ x = f x
 
-id' : Int -> Int
-id' = fun x : Int, x
+add1 : Int -> Int
+add1 = fun x : Int, x + 1
 
 example : Int
-example = (fun x : Int, x) $ id' $ id' $ 5
+example = (fun x : Int, x) $ add1 $ add1 $ 5
 
 infixr a ! b = a + a * b
 prefix & c = c ! c

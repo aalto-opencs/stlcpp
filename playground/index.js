@@ -48,7 +48,20 @@ function applyLayoutMode(mode) {
 }
 
 const examples = {
-  Simple: `a : Integer
+  Simple: `// favorite number
+a : Int
+a = 123
+
+// favorite function
+f : Int -> Int
+f = fun x : Int, a
+`,
+  "List Operations": `main : [Integer]
+main =
+  let l = 1 :: 2 :: 3 :: 4 :: 5 :: nil Integer in
+  map Integer Integer (fun x : Integer, x * 2) l
+`,
+  "List Operations 2": `a : Integer
 a = 5
 
 product : [Integer] -> Integer
@@ -59,11 +72,6 @@ product = fun xs : [Integer],
 
 main : Integer
 main = product (3 :: 4 :: 5 :: nil Integer)
-`,
-  "List Operations": `main : [Integer]
-main =
-  let l = 1 :: 2 :: 3 :: 4 :: 5 :: nil Integer in
-  map Integer Integer (fun x : Integer, x * 2) l
 `,
   Factorial: `fact : Integer -> Integer
 fact = fun n : Integer,
@@ -78,6 +86,86 @@ id' = fun A, fun x : A, x
 
 main : Integer
 main = id' Integer 42
+`,
+  Syntax: `infixr f $ x = f x
+
+add1 : Int -> Int
+add1 = fun x : Int, x + 1
+
+example : Int
+example = (fun x : Int, x) $ add1 $ add1 $ 5
+
+infixr a ! b = a + a * b
+prefix & c = c ! c
+
+main : Int
+main = & 8
+`,
+  CSV: `is_newline : Char -> Bool
+is_newline = fun c : Char, c == '\\n'
+
+is_comma : Char -> Bool
+is_comma = fun c : Char, c == ','
+
+lines : String -> [String]
+lines = fun s : String,
+  split Char is_newline s
+
+csv : String -> [String]
+csv = fun s : String,
+  split Char is_comma s
+
+split_rows : [String] -> [[String]]
+split_rows = fun ls : [String],
+  map String [String] csv ls
+
+main : [[String]]
+main = split_rows <| lines "a,b,c,d\\n1,2,,3"
+`,
+  "Church Numerals": `CBool : Type
+CBool = forall T, T -> T -> T
+
+tru : CBool
+tru = fun T, fun x : T, fun y : T, x
+
+fals : CBool
+fals = fun T, fun x : T, fun y : T, y
+
+cnot : CBool -> CBool
+cnot = fun b : CBool, fun T, fun x : T, fun y : T, b T y x
+
+unchurchbool : CBool -> Bool
+unchurchbool = fun b : CBool, b Bool true false
+
+CNat : Type
+CNat = forall T, (T -> T) -> T -> T
+
+zero : CNat
+zero = fun T, fun f : T -> T, fun x : T, x
+
+succ : CNat -> CNat
+succ = fun n : CNat, fun T, fun f : T -> T, fun x : T, f (n T f x)
+
+one : CNat
+one = succ zero
+
+cadd : CNat -> CNat -> CNat
+cadd = fun a : CNat, fun b : CNat, fun T, fun f : T -> T, fun x : T, a T f (b T f x)
+
+unchurchnat : CNat -> Int
+unchurchnat = fun n : CNat, n Int (fun x : Int, x + 1) 0
+
+example : Int
+example = unchurchnat (cadd one one)
+`,
+  Ranks: `rank2 : (forall X, X -> X) -> (Int, Bool)
+rank2 = fun f : forall X, X -> X, (f Int 2, f Bool true)
+
+rank3 : forall R, ((forall A, A -> A) -> R) -> R
+rank3 = fun R, fun h : (forall A, A -> A) -> R, h id
+
+main : (Int, Bool)
+main = rank3 (Int, Bool) rank2
 `,
 };
 

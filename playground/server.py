@@ -15,5 +15,6 @@ with socketserver.TCPServer(
         *a, directory=str(root), **kw
     ),
 ) as httpd:
+    httpd.allow_reuse_address = True
     print(f"Serving {root} on http://localhost:{PORT}")
     httpd.serve_forever()
