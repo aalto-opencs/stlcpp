@@ -35,8 +35,8 @@ function urlSafeToBase64(urlSafe) {
   return base64;
 }
 
-// Encode code to URL-safe gzipped base64
-function encodeCodeToUrl(code) {
+// Encode code to URL-safe gzipped base64 (for ?codez=)
+function encodeCodeGzipped(code) {
   try {
     const bytes = stringToBytes(code);
     const compressed = pako.gzip(bytes);
@@ -44,13 +44,25 @@ function encodeCodeToUrl(code) {
     const base64 = btoa(String.fromCharCode.apply(null, compressed));
     return base64ToUrlSafe(base64);
   } catch (e) {
-    console.error("Failed to encode code:", e);
+    console.error("Failed to encode code (gzipped):", e);
     return null;
   }
 }
 
-// Decode URL-safe gzipped base64 to code
-function decodeCodeFromUrl(encoded) {
+// Encode code to URL-safe base64 (for ?code=)
+function encodeCodePlain(code) {
+  try {
+    const bytes = stringToBytes(code);
+    const base64 = btoa(String.fromCharCode.apply(null, bytes));
+    return base64ToUrlSafe(base64);
+  } catch (e) {
+    console.error("Failed to encode code (plain):", e);
+    return null;
+  }
+}
+
+// Decode URL-safe gzipped base64 to code (for ?codez=)
+function decodeCodeGzipped(encoded) {
   try {
     const base64 = urlSafeToBase64(encoded);
     // Convert base64 to Uint8Array
@@ -62,26 +74,48 @@ function decodeCodeFromUrl(encoded) {
     const decompressed = pako.ungzip(bytes);
     return bytesToString(decompressed);
   } catch (e) {
-    console.error("Failed to decode code from URL:", e);
+    console.error("Failed to decode code (gzipped):", e);
+    return null;
+  }
+}
+
+// Decode URL-safe base64 to code (for ?code=)
+function decodeCodePlain(encoded) {
+  try {
+    const base64 = urlSafeToBase64(encoded);
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytesToString(bytes);
+  } catch (e) {
+    console.error("Failed to decode code (plain):", e);
     return null;
   }
 }
 
 // Get code from URL parameter if present
+// Priority: ?codez= (gzipped) > ?code= (plain base64)
 function getCodeFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  const encoded = params.get("code");
-  if (!encoded) return null;
-  return decodeCodeFromUrl(encoded);
+
+  const gzipped = params.get("codez");
+  if (gzipped) return decodeCodeGzipped(gzipped);
+
+  const plain = params.get("code");
+  if (plain) return decodeCodePlain(plain);
+
+  return null;
 }
 
-// Generate shareable URL with current code
+// Generate shareable URL with current code (uses gzipped ?codez=)
 function generateShareUrl(code) {
-  const encoded = encodeCodeToUrl(code);
+  const encoded = encodeCodeGzipped(code);
   if (!encoded) return null;
   const url = new URL(window.location.href);
   url.search = "";
-  url.searchParams.set("code", encoded);
+  url.searchParams.set("codez", encoded);
   return url.toString();
 }
 
