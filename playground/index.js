@@ -3,6 +3,89 @@ import init, { run } from "./pkg/stlcpp.js";
 const UNTITLED_BASENAME = "Untitled";
 
 /**
+ * URL sharing: gzip + base64 encoding/decoding
+ *
+ * Encoding: code → gzip → base64 → URL-safe base64
+ * Decoding: URL-safe base64 → base64 → gunzip → code
+ */
+
+// Convert string to Uint8Array (UTF-8)
+function stringToBytes(str) {
+  return new TextEncoder().encode(str);
+}
+
+// Convert Uint8Array to string (UTF-8)
+function bytesToString(bytes) {
+  return new TextDecoder().decode(bytes);
+}
+
+// Standard base64 to URL-safe base64
+function base64ToUrlSafe(base64) {
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+// URL-safe base64 to standard base64
+function urlSafeToBase64(urlSafe) {
+  let base64 = urlSafe.replace(/-/g, "+").replace(/_/g, "/");
+  // Add padding if needed
+  const pad = base64.length % 4;
+  if (pad) {
+    base64 += "=".repeat(4 - pad);
+  }
+  return base64;
+}
+
+// Encode code to URL-safe gzipped base64
+function encodeCodeToUrl(code) {
+  try {
+    const bytes = stringToBytes(code);
+    const compressed = pako.gzip(bytes);
+    // Convert Uint8Array to base64
+    const base64 = btoa(String.fromCharCode.apply(null, compressed));
+    return base64ToUrlSafe(base64);
+  } catch (e) {
+    console.error("Failed to encode code:", e);
+    return null;
+  }
+}
+
+// Decode URL-safe gzipped base64 to code
+function decodeCodeFromUrl(encoded) {
+  try {
+    const base64 = urlSafeToBase64(encoded);
+    // Convert base64 to Uint8Array
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const decompressed = pako.ungzip(bytes);
+    return bytesToString(decompressed);
+  } catch (e) {
+    console.error("Failed to decode code from URL:", e);
+    return null;
+  }
+}
+
+// Get code from URL parameter if present
+function getCodeFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get("code");
+  if (!encoded) return null;
+  return decodeCodeFromUrl(encoded);
+}
+
+// Generate shareable URL with current code
+function generateShareUrl(code) {
+  const encoded = encodeCodeToUrl(code);
+  if (!encoded) return null;
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.searchParams.set("code", encoded);
+  return url.toString();
+}
+
+/**
  * UI layout modes:
  * - "vertical": editor on top, output below (default)
  * - "horizontal": editor left, output right
@@ -386,6 +469,9 @@ async function main() {
   // Layout UI (optional; index.html may omit it)
   const layoutToggleBtn = document.getElementById("layout-toggle");
 
+  // Share button (optional)
+  const shareBtn = document.getElementById("share-btn");
+
   // Apply persisted layout mode before wiring handlers
   let layoutMode = getLayoutMode();
   applyLayoutMode(layoutMode);
@@ -584,27 +670,41 @@ async function main() {
     exampleList.appendChild(btn);
   }
 
-  // Startup: always restore the active file if present.
-  // If missing, start with a default example view but do not create a file.
-  const active = getActiveFileName();
-  if (active) {
-    const text = readLocalFile(active);
-    if (typeof text === "string") {
-      editor.setValue(text);
-      setFileName(active);
+  // Startup priority:
+  // 1. Check for ?code= URL parameter (shared code)
+  // 2. Restore the active file if present
+  // 3. Start with a default example view (no file created)
+  const urlCode = getCodeFromUrl();
+  if (urlCode !== null) {
+    // Load code from URL - treat like an example (no file created until edited)
+    editor.setValue(urlCode);
+    setFileName("Shared Code");
+    clearScratchBuffer();
+    // Clear URL parameter to avoid re-loading on refresh
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.search = "";
+    window.history.replaceState({}, "", cleanUrl.toString());
+  } else {
+    const active = getActiveFileName();
+    if (active) {
+      const text = readLocalFile(active);
+      if (typeof text === "string") {
+        editor.setValue(text);
+        setFileName(active);
+      } else {
+        // Active file missing; clear active selection and show default example
+        setActiveFileName(null);
+        editor.setValue(examples["Simple"]);
+        setFileName("Simple (example)");
+        pendingExampleName = "Simple";
+        pendingExampleCode = examples["Simple"];
+      }
     } else {
-      // Active file missing; clear active selection and show default example
-      setActiveFileName(null);
       editor.setValue(examples["Simple"]);
       setFileName("Simple (example)");
       pendingExampleName = "Simple";
       pendingExampleCode = examples["Simple"];
     }
-  } else {
-    editor.setValue(examples["Simple"]);
-    setFileName("Simple (example)");
-    pendingExampleName = "Simple";
-    pendingExampleCode = examples["Simple"];
   }
 
   renderLocalFiles();
@@ -726,6 +826,31 @@ async function main() {
         console.error(e);
       }
     });
+  }
+
+  // Share button: generate URL and copy to clipboard
+  if (shareBtn) {
+    shareBtn.onclick = async () => {
+      const code = editor.getValue();
+      if (!code.trim()) {
+        output.textContent = "Nothing to share (editor is empty)";
+        return;
+      }
+
+      const url = generateShareUrl(code);
+      if (!url) {
+        output.textContent = "Error: failed to generate share URL";
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(url);
+        output.textContent = "Share URL copied to clipboard!\n\n" + url;
+      } catch (e) {
+        // Fallback: show URL in output for manual copying
+        output.textContent = "Share URL (copy manually):\n\n" + url;
+      }
+    };
   }
 
   document.getElementById("run-btn").onclick = runCode;
