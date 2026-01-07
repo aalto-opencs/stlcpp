@@ -1,5 +1,6 @@
 import sum
 
+// Note: not the usual euclidean remainder which is never negative
 int.rem : Int -> Int -> Int
 int.rem = fun n : Int, fun m : Int,
   n - (n / m) * m
@@ -15,7 +16,7 @@ int.to_string.. : String -> Int -> String
 int.to_string.. = fun s : String, fun n : Int,
   if n == 0 then s
   else
-    let rem = int.rem n 10 in
+    let rem = n % 10 in
     int.to_string.. (cons (int.to_char.. rem) s) (n / 10)
 
 
@@ -41,3 +42,6 @@ int.parse = fun s : String,
     | cons h t => if h == '-' then
         option.map Int Int (fun n : Int, -n) (int.parse.. 0 t)
       else int.parse.. 0 s
+
+int.abs : Int -> Int
+int.abs = fun n : Int, if n < 0 then - n else n

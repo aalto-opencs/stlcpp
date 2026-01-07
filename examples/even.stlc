@@ -1,0 +1,6 @@
+even : Int -> Bool
+even = fun n : Int, let n = int.abs n in
+    if n == 0 then true else ! (even (n - 1))
+
+main : Bool
+main = even (-9)
