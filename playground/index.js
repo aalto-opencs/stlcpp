@@ -82,7 +82,9 @@ function decodeCodeGzipped(encoded) {
 // Decode URL-safe base64 to code (for ?code=)
 function decodeCodePlain(encoded) {
   try {
-    const base64 = urlSafeToBase64(encoded);
+    // URL query strings decode + as space, so convert spaces back to +
+    const withPlus = encoded.replace(/ /g, "+");
+    const base64 = urlSafeToBase64(withPlus);
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
@@ -101,11 +103,20 @@ function getCodeFromUrl() {
   const params = new URLSearchParams(window.location.search);
 
   const gzipped = params.get("codez");
-  if (gzipped) return decodeCodeGzipped(gzipped);
+  if (gzipped) {
+    console.log("Found codez parameter, decoding gzipped...");
+    return decodeCodeGzipped(gzipped);
+  }
 
   const plain = params.get("code");
-  if (plain) return decodeCodePlain(plain);
+  if (plain) {
+    console.log("Found code parameter, decoding plain base64...");
+    const result = decodeCodePlain(plain);
+    console.log("Decoded result:", result ? "success" : "null");
+    return result;
+  }
 
+  console.log("No code parameter found in URL");
   return null;
 }
 
@@ -708,12 +719,17 @@ async function main() {
   // 1. Check for ?code= URL parameter (shared code)
   // 2. Restore the active file if present
   // 3. Start with a default example view (no file created)
+  console.log("Startup: checking for URL code, search =", window.location.search);
   const urlCode = getCodeFromUrl();
+  console.log("Startup: urlCode =", urlCode !== null ? "found" : "null");
   if (urlCode !== null) {
+    console.log("Startup: loading URL code into editor");
     // Load code from URL - treat like an example (no file created until edited)
     editor.setValue(urlCode);
     setFileName("Shared Code");
     clearScratchBuffer();
+    // Reset pending example state to prevent conflicts
+    resetPendingExample();
     // Clear URL parameter to avoid re-loading on refresh
     const cleanUrl = new URL(window.location.href);
     cleanUrl.search = "";
@@ -725,6 +741,8 @@ async function main() {
       if (typeof text === "string") {
         editor.setValue(text);
         setFileName(active);
+        // Reset pending example state when loading a saved file
+        resetPendingExample();
       } else {
         // Active file missing; clear active selection and show default example
         setActiveFileName(null);
