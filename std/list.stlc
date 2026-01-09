@@ -271,3 +271,9 @@ range = fun start : Int, fun end : Int,
 
 infixl:30 x .. y = range x y
 infixl:30 x ..= y = range x (y+1)
+
+empty : forall A, [A] -> Bool
+empty = fun A, fun l : [A],
+  lcase l of
+    | nil => true
+    | cons _ _ => false

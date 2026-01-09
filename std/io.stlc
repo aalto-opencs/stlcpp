@@ -18,13 +18,20 @@ io.map = fun A, fun B, fun f : (A -> B), io.bind A B (io.pure B . f)
 
 // Reads lines from input until an empty line is read
 io.readlines : IO [String]
-io.readlines = let
-    is_empty = fun s : String,
-      lcase s of
-        | nil => true
-        | cons _ _ => false
-  in
+io.readlines =
   io.bind String [String]
-  (fun l : String, if is_empty l then io.pure [String] [:String]
+  (fun l : String, if empty Char l then io.pure [String] [:String]
     else io.map [String] [String] (fun lines : [String], l :: lines) io.readlines)
+  io.readline
+
+io.repl : (String -> String) -> IO Unit
+io.repl =
+  fun f : String -> String,
+  io.bind String Unit 
+  (fun input : String, 
+    if empty Char input then io.pure Unit () else
+    io.bind Unit Unit 
+    (fun _ : Unit, io.repl f)
+    <| io.print ((f input) <> "\n")
+  )
   io.readline
