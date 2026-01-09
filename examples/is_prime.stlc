@@ -1,0 +1,16 @@
+is_prime : Int -> Bool
+is_prime = fun n : Int,
+  if n < 2 then false else
+  bool.or (n == 2) 
+  <| bool.not 
+  <| fold Bool Bool (fun acc : Bool, fun e : Bool, acc || e) false
+  <| map Int Bool (fun a : Int, n % a == 0) (2..n)
+
+unwrap : Unit + Int -> Int
+unwrap = fun opt : Unit + Int,
+  case opt of
+    | inl _ => panic Int "Unwrap failed"
+    | inr n => n
+
+main : IO Unit
+main = io.repl (bool.to_string . is_prime . unwrap . int.parse)
