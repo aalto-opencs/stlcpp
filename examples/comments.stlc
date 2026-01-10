@@ -14,3 +14,12 @@ y = [1,
     // yes
     2 :Int
     ]
+
+main : IO Unit
+main = [1, 2, 3:Int] // input
+    |> map Int Int // map ints to ints
+        (fun x : Int, x + 1) // 2, 3, 4
+    |> tail Int // 3, 4
+    |> sum // 7
+    |> int.to_string // "7"
+    |> io.print // prints 7

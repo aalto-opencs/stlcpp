@@ -1,14 +1,28 @@
 use nom::{
     AsChar, IResult, Input, Offset, Parser,
+    branch::alt,
+    bytes::complete::{tag, take_till},
     character::complete::{char, space0, space1},
     combinator::{opt, recognize},
     error::{ErrorKind, ParseError},
-    sequence::{pair, preceded, terminated},
+    multi::{separated_list0, separated_list1},
+    sequence::{delimited, pair, preceded, terminated},
 };
 
 use nom_locate::LocatedSpan;
 
 pub type Span<'a> = LocatedSpan<&'a str, &'a str>;
+
+/// Parse a comment preceded by spaces without consuming the trailing newline.
+pub fn parse_comment<'a, E: ParseError<Span<'a>>>(
+    input: Span<'a>,
+) -> IResult<Span<'a>, Span<'a>, E> {
+    recognize(preceded(
+        space0,
+        (tag("//"), take_till(|c: char| c.is_newline())),
+    ))
+    .parse(input)
+}
 
 /// Whitespace parser that behaves like `multispace0` but **allows at most one newline** (`\n`).
 ///
@@ -60,9 +74,51 @@ where
     nom::branch::alt((hspace_then_opt_nl, nl_block)).parse(input)
 }
 
+/// Whitespace parser that skips comments. New lines that precede comments are not counted.
+/// A new line followed by a comment is considered as a comment and parsed.
+pub fn ws1_max1_nl_comments<'a, E: ParseError<Span<'a>>>(
+    input: Span<'a>,
+) -> IResult<Span<'a>, Span<'a>, E> {
+    // Branch 1: one or more comment blocks (each starts with '\n'), optionally then a newline + spaces.
+    let comments_then_opt_nl = recognize((
+        space0,
+        separated_list1(char('\n'), parse_comment),
+        opt(preceded(char('\n'), space0)),
+    ));
+
+    // Branch 2: new line, then one or more comment blocks
+    let nl_then_comments_then_opt_nl = recognize((
+        space0,
+        char('\n'),
+        separated_list1(char('\n'), parse_comment),
+        opt(preceded(char('\n'), space0)),
+    ));
+
+    // Branch 3: zero or more comment blocks, then a newline block (space0 '\n' space0).
+    let opt_comments_then_nl_block = recognize((
+        separated_list0(char('\n'), parse_comment),
+        space0,
+        char('\n'),
+        space0,
+    ));
+
+    alt((
+        comments_then_opt_nl,
+        nl_then_comments_then_opt_nl,
+        opt_comments_then_nl_block,
+        // Branch 4: one or more spaces
+        space1,
+    ))
+    .parse(input)
+}
+
+pub fn ws0_max1_nl_comments<'a, E: ParseError<Span<'a>>>(
+    input: Span<'a>,
+) -> IResult<Span<'a>, Span<'a>, E> {
+    alt((ws1_max1_nl_comments, space0)).parse(input)
+}
+
 /// Wrap a parser with optional whitespace (max one newline) on both sides.
-///
-/// Note: use [`ws0_max1_nl`] in all term and type parsers to avoid jumping to next declaration.
 pub fn ws0<I, F, O, E>(inner: F) -> impl Parser<I, Output = O, Error = E>
 where
     F: Parser<I, Output = O, Error = E>,
@@ -75,8 +131,6 @@ where
 }
 
 /// Wrap a parser with required whitespace (max one newline) on both sides.
-///
-/// Note: use [`ws1_max1_nl`] in all term and type parsers to avoid jumping to next declaration.
 pub fn ws1<I, F, O, E>(inner: F) -> impl Parser<I, Output = O, Error = E>
 where
     F: Parser<I, Output = O, Error = E>,
@@ -85,6 +139,24 @@ where
     <I as Input>::Item: AsChar,
 {
     preceded(ws1_max1_nl, terminated(inner, ws1_max1_nl))
+}
+
+pub fn ws1_comments<'a, F, O, E: ParseError<Span<'a>>>(
+    inner: F,
+) -> impl Parser<Span<'a>, Output = O, Error = E>
+where
+    F: Parser<Span<'a>, Output = O, Error = E>,
+{
+    delimited(ws1_max1_nl_comments, inner, ws1_max1_nl_comments)
+}
+
+pub fn ws0_comments<'a, F, O, E: ParseError<Span<'a>>>(
+    inner: F,
+) -> impl Parser<Span<'a>, Output = O, Error = E>
+where
+    F: Parser<Span<'a>, Output = O, Error = E>,
+{
+    delimited(ws0_max1_nl_comments, inner, ws0_max1_nl_comments)
 }
 
 /// Try all parsers and return the first successful one (or the first non-recoverable error).
@@ -169,5 +241,51 @@ where
             Some(e) => Err(nom::Err::Error(e)),
             None => Err(nom::Err::Error(E::from_error_kind(input, ErrorKind::Alt))),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ws1_max1_nl_comments_basic() {
+        let input = Span::new_extra("  abc", "");
+        let (rest, _parsed) =
+            ws1_max1_nl_comments::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
+
+        let input = Span::new_extra(" \n abc", "");
+        let (rest, _parsed) =
+            ws1_max1_nl_comments::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
+    }
+
+    #[test]
+    fn test_ws1_max1_nl_comments() {
+        let input = Span::new_extra("\n// comment\n  abc", "");
+        let (rest, _parsed) =
+            ws1_max1_nl_comments::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
+
+        let input = Span::new_extra("    \n// comment\n  abcd", "");
+        let (rest, _parsed) =
+            ws1_max1_nl_comments::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abcd");
+
+        let input = Span::new_extra("   \n// comment\n\n  abc", "");
+        let (rest, _parsed) =
+            ws1_max1_nl_comments::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "\n  abc");
+
+        let input = Span::new_extra("   \n  \n// comment\n  abc", "");
+        let (rest, _parsed) =
+            ws1_max1_nl_comments::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "\n// comment\n  abc");
+
+        let input = Span::new_extra("   \n // c1 \n// c2 \n  abc", "");
+        let (rest, _parsed) =
+            ws1_max1_nl_comments::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
     }
 }

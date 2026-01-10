@@ -8,9 +8,9 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::*,
-    combinator::{cut, eof, opt},
+    combinator::{cut, eof, opt, recognize},
     error::ParseError,
-    multi::{many0, many1, separated_list1},
+    multi::{many0, separated_list1},
 };
 use nom_language::error::VerboseError;
 use nom_locate::position;
@@ -21,7 +21,7 @@ use crate::{
     parse::*,
     syntax::{parse::*, *},
     term::{
-        parse::{parse_comment, parse_term, parse_variable_name},
+        parse::{parse_term, parse_variable_name},
         tokens::{SpannedToken as TermSpannedToken, Surface},
     },
     r#type::{
@@ -34,21 +34,8 @@ use super::{Declaration, Import, TypeDeclaration};
 
 fn skip_trivia<'a, E: ParseError<Span<'a>> + nom::error::ContextError<Span<'a>>>(
     input: Span<'a>,
-) -> IResult<Span<'a>, (), E> {
-    // Consume any mixture of:
-    // - whitespace (including newlines)
-    // - comments (wherever they appear)
-    //
-    // We must also handle "comment-only lines" (e.g. `// ...\n`) at EOF where there may
-    // be *no* trailing whitespace after the comment. Therefore we accept either:
-    // - at least one whitespace char (`multispace1`) OR
-    // - at least one comment (consuming input), without requiring whitespace after it.
-    many0(alt((
-        multispace1.map(|_| ()),
-        ws0(parse_comment).map(|_| ()),
-    )))
-    .map(|_| ())
-    .parse(input)
+) -> IResult<Span<'a>, Span<'a>, E> {
+    recognize(many0(alt((multispace1, parse_comment)))).parse(input)
 }
 
 /// ```stlc
@@ -204,7 +191,7 @@ pub fn parse_module(
     let mut submodules = vec![prelude.clone()];
 
     enum Block<'a> {
-        Imports(Vec<Import>),
+        Import(Import),
         TypeDeclaration((String, TypeSpannedToken<'a>)),
         Declaration((String, TypeSpannedToken<'a>, TermSpannedToken<'a, Surface>)),
         Infix(Infix),
@@ -213,7 +200,7 @@ pub fn parse_module(
 
     let mut input = Span::new_extra(code, code);
     loop {
-        // Tolerate trailing whitespace and comment-only lines:
+        // Tolerate whitespace and comments:
         // consume trivia before we decide whether we're at EOF.
         let (rest, _) = skip_trivia(input)?;
         input = rest;
@@ -223,7 +210,7 @@ pub fn parse_module(
         }
 
         let (rest, res) = alt((
-            many1((parse_import, multispace0).map(|(import, _)| import)).map(Block::Imports), // We allow multiple imports per block
+            parse_import.map(Block::Import),
             (|input| parse_infix(&combined_syntaxes, input)).map(Block::Infix),
             (|input| parse_prefix(&combined_syntaxes, input)).map(Block::Prefix),
             (|input| parse_declaration(&combined_syntaxes, input)).map(Block::Declaration),
@@ -233,13 +220,11 @@ pub fn parse_module(
         input = rest;
 
         match res {
-            Block::Imports(mut is) => {
-                for i in &is {
-                    let mt = i.resolve(&basepath, prelude)?;
-                    combined_syntaxes.append(&mut mt.syntaxes());
-                    submodules.push(mt);
-                }
-                imports.append(&mut is)
+            Block::Import(i) => {
+                let mt = i.resolve(&basepath, prelude)?;
+                combined_syntaxes.append(&mut mt.syntaxes());
+                submodules.push(mt);
+                imports.push(i)
             }
             Block::TypeDeclaration((name, ty)) => {
                 type_declarations.push(TypeDeclaration { name, ty });
@@ -274,4 +259,47 @@ pub fn parse_module(
         },
         submodules,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_trivia() {
+        let input = Span::new_extra("abc", "");
+        let (rest, _parsed) = skip_trivia::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
+
+        let input = Span::new_extra("\nabc", "");
+        let (rest, _parsed) = skip_trivia::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
+
+        let input = Span::new_extra("// comment", "");
+        let (rest, _parsed) = skip_trivia::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "");
+
+        let input = Span::new_extra("// comment\nabc", "");
+        let (rest, _parsed) = skip_trivia::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
+
+        let input = Span::new_extra(
+            "
+// comment
+
+abc",
+            "",
+        );
+        let (rest, _parsed) = skip_trivia::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
+
+        let input = Span::new_extra(
+            "
+// comment
+abc",
+            "",
+        );
+        let (rest, _parsed) = skip_trivia::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "abc");
+    }
 }

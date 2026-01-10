@@ -4,17 +4,14 @@ use std::marker::PhantomData;
 use nom::{
     IResult, Parser,
     branch::alt,
-    bytes::{
-        complete::{tag, take_while, take_while_m_n},
-        take_till,
-    },
+    bytes::complete::{tag, take_while, take_while_m_n},
     character::{
         anychar,
         complete::{alpha1, char as character, digit1},
     },
     combinator::{consumed, cut, fail, opt, value, verify},
     error::{ContextError, ParseError},
-    multi::{fold_many0, many0, separated_list0},
+    multi::{fold_many0, separated_list0},
     sequence::{delimited, preceded},
 };
 use nom_language::precedence::{Operation, precedence};
@@ -279,9 +276,11 @@ fn parse_abs<
             character(':'),
             ws0_max1_nl,
             parse_type,
-            cut((ws0_max1_nl, character(','), ws0_max1_nl, |input| {
-                parse_term(syntaxes, input)
-            })),
+            cut(
+                (ws0_max1_nl, character(','), ws0_max1_nl_comments, |input| {
+                    parse_term(syntaxes, input)
+                }),
+            ),
         )
             .map(|(_, _, var, _, _, _, ty, (_, _, _, body))| Abs {
                 var,
@@ -365,7 +364,10 @@ pub fn parse_app<
     let (rest, t1) = (|input| parse_term_primary(syntaxes, input)).parse(input)?;
 
     fold_many0(
-        (ws1_max1_nl, (|input| parse_term_or_type(syntaxes, input))),
+        (
+            ws1_max1_nl_comments,
+            (|input| parse_term_or_type(syntaxes, input)),
+        ),
         move || t1.clone(),
         |fun, (_, arg)| match arg {
             Either::Left(t) => SpannedToken {
@@ -474,9 +476,9 @@ fn parse_ite<
         (
             tag("if"),
             cut((
-                ws1(|input| parse_term(syntaxes, input)),
+                ws1_comments(|input| parse_term(syntaxes, input)),
                 tag("then"),
-                ws1(|input| parse_term(syntaxes, input)),
+                ws1_comments(|input| parse_term(syntaxes, input)),
                 tag("else"),
                 ws1_max1_nl,
                 |input| parse_term(syntaxes, input),
@@ -665,7 +667,9 @@ fn parse_list<
         position,
         character('['),
         ws0_max1_nl,
-        separated_list0(ws0(character(',')), |input| parse_term(syntaxes, input)),
+        separated_list0(ws0_comments(character(',')), |input| {
+            parse_term(syntaxes, input)
+        }),
         ws0(character(':')),
         cut((parse_type, ws0_max1_nl, character(']'))),
     )
@@ -684,7 +688,6 @@ fn parse_list<
             }
             list
         })
-        // .map(SpannedToken::new)
         .parse(input)
 }
 
@@ -1082,12 +1085,6 @@ fn parse_trace<
         .parse(input)
 }
 
-pub fn parse_comment<'a, 'b, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, (), E> {
-    (tag("//"), take_till(|c: char| c.is_newline()))
-        .map(|(_, _)| ())
-        .parse(input)
-}
-
 /// Primary (always consuming) parser for terms.
 pub fn parse_term_primary<
     'a,
@@ -1198,10 +1195,9 @@ pub fn parse_term<
         },
     );
 
-    delimited(
-        many0(ws0(parse_comment)),
+    preceded(
+        ws0_max1_nl_comments,
         alt((syntax_operators, |input| parse_term_base(syntaxes, input))),
-        many0(ws0(parse_comment)),
     )
     .parse(input)
 }
@@ -1223,7 +1219,7 @@ mod tests {
     }
 
     #[test]
-    fn does_not_consume_trailing_whitespace() {
+    fn does_not_consume_trailing_newline() {
         let syntaxes = Syntaxes::new();
 
         let input = Span::new_extra("123\n", "");
@@ -1238,5 +1234,73 @@ mod tests {
             *rest.fragment(),
             "\n\n// a\nf : Int -> Int\nf = fun x : Int, a\n"
         );
+    }
+
+    #[test]
+    fn does_not_consumes_trailing_whitespace_even_if_followed_by_a_comment() {
+        let syntaxes = Syntaxes::new();
+
+        let input = Span::new_extra("123   \n// comment", "");
+        let (rest, _parsed) = parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input)
+            .expect("parse_term failed");
+        assert_eq!(*rest.fragment(), "   \n// comment");
+    }
+
+    #[test]
+    fn does_not_parse_applications_across_declarations() {
+        let syntaxes = Syntaxes::new();
+
+        let input = Span::new_extra("f 123  \n\nmain : Int", "");
+        let (rest, _parsed) = parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input)
+            .expect("parse_term failed");
+        assert_eq!(*rest.fragment(), "  \n\nmain : Int");
+    }
+
+    #[test]
+    fn parses_applications_with_comments() {
+        let syntaxes = Syntaxes::new();
+
+        let input = Span::new_extra("f  \n  // application with comment\n  123", "");
+        let (rest, _parsed) = parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input)
+            .expect("parse_term failed");
+        assert_eq!(*rest.fragment(), "");
+
+        let input = Span::new_extra(
+            "f 456
+// comment after app
+
+main : Int",
+            "",
+        );
+        let (rest, _parsed) = parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input)
+            .expect("parse_term failed");
+        assert_eq!(*rest.fragment(), "\n// comment after app\n\nmain : Int");
+    }
+
+    #[test]
+    fn parses_individual_comment() {
+        let input = Span::new_extra("// comment", "");
+        let (rest, _parsed) = parse_comment::<nom_language::error::VerboseError<_>>(input).unwrap();
+        assert_eq!(*rest.fragment(), "");
+    }
+
+    #[test]
+    fn parses_term_followed_by_comment() {
+        let syntaxes = Syntaxes::new();
+
+        let input = Span::new_extra("123// comment", "");
+        let (rest, _parsed) =
+            parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input).unwrap();
+        assert_eq!(*rest.fragment(), "// comment");
+
+        let input = Span::new_extra("123 // comment", "");
+        let (rest, _parsed) =
+            parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input).unwrap();
+        assert_eq!(*rest.fragment(), " // comment");
+
+        let input = Span::new_extra("[1, 2, 3:Int] // input\n", "");
+        let (rest, _parsed) =
+            parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input).unwrap();
+        assert_eq!(*rest.fragment(), " // input\n");
     }
 }

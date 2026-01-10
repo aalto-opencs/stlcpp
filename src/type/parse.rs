@@ -15,7 +15,6 @@ use nom_locate::position;
 
 use super::super::parse::*;
 use crate::RESERVED_KEYWORDS;
-use crate::term::parse::parse_comment;
 use crate::r#type::tokens::{SpannedToken, Token};
 
 use Token::*;

@@ -5,15 +5,14 @@ use nom::{
     character::complete::*,
     combinator::{cut, opt},
     error::ParseError,
-    multi::many0,
     sequence::terminated,
 };
 use nom_language::precedence::{Assoc, Binary, binary_op, unary_op};
 
 use super::*;
 use crate::{
-    parse::{Span, ws0, ws0_max1_nl},
-    term::parse::{parse_comment, parse_term, parse_usize, parse_variable_name},
+    parse::{Span, ws0_max1_nl_comments},
+    term::parse::{parse_term, parse_usize, parse_variable_name},
 };
 
 impl Prefix {
@@ -24,9 +23,9 @@ impl Prefix {
         unary_op(
             self.prec,
             (
-                ws0_max1_nl,
+                ws0_max1_nl_comments,
                 position,
-                terminated(tag(self.op.0.as_str()), ws0_max1_nl)
+                terminated(tag(self.op.0.as_str()), ws0_max1_nl_comments)
                     .map(|op_sym: Span<'a>| *op_sym.fragment()),
             )
                 .map(|(_, a, b)| (a, b)),
@@ -44,9 +43,9 @@ impl Infix {
             self.prec,
             self.assoc,
             (
-                ws0_max1_nl,
+                ws0_max1_nl_comments,
                 position,
-                terminated(tag(self.op.0.as_str()), ws0_max1_nl)
+                terminated(tag(self.op.0.as_str()), ws0_max1_nl_comments)
                     .map(|op_sym: Span<'a>| *op_sym.fragment()),
             )
                 .map(|(_, a, b)| (a, b)),
@@ -102,7 +101,6 @@ pub fn parse_infix<
     input: Span<'static>, // TODO figure out lifetimes
 ) -> IResult<Span<'static>, Infix, E> {
     (
-        many0(ws0(parse_comment)),
         tag("infix"),
         cut((
             alt((char('l'), char('r'))).map(|c| if c == 'l' { Assoc::Left } else { Assoc::Right }),
@@ -120,7 +118,7 @@ pub fn parse_infix<
         )),
     )
         .map(
-            |(_, _, (assoc, prec, _, lhs, _, op, _, rhs, _, _, _, body))| Infix {
+            |(_, (assoc, prec, _, lhs, _, op, _, rhs, _, _, _, body))| Infix {
                 prec,
                 assoc,
                 lhs,
@@ -155,7 +153,6 @@ pub fn parse_prefix<
     input: Span<'static>, // TODO figure out lifetimes
 ) -> IResult<Span<'static>, Prefix, E> {
     (
-        many0(ws0(parse_comment)),
         tag("prefix"),
         cut((
             opt((char(':'), parse_usize).map(|(_, x)| x)).map(|o| o.unwrap_or(5)), // Default precedence level is 5
@@ -169,11 +166,50 @@ pub fn parse_prefix<
             |input| parse_term(syntaxes, input),
         )),
     )
-        .map(|(_, _, (prec, _, op, _, rhs, _, _, _, body))| Prefix {
+        .map(|(_, (prec, _, op, _, rhs, _, _, _, body))| Prefix {
             prec,
             op: Operator(op),
             rhs,
             body,
         })
         .parse(input)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_infix() {
+        let mut syntaxes = Syntaxes::new();
+        let (_, pipe) = parse_infix::<nom_language::error::VerboseError<_>>(
+            &syntaxes,
+            Span::new_extra("infixl:20 x <| y = x y", ""),
+        )
+        .unwrap();
+
+        syntaxes.infix.push(pipe);
+
+        let input = Span::new_extra("f <| x // end", "");
+        let (rest, _parsed) = parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input)
+            .expect("parse_term failed");
+        assert_eq!(*rest.fragment(), " // end");
+    }
+
+    #[test]
+    fn infix_parses_comments_between_operands() {
+        let mut syntaxes = Syntaxes::new();
+        let (_, pipe) = parse_infix::<nom_language::error::VerboseError<_>>(
+            &syntaxes,
+            Span::new_extra("infixl:20 x <| y = x y", ""),
+        )
+        .unwrap();
+
+        syntaxes.infix.push(pipe);
+
+        let input = Span::new_extra("f // comment\n  <| x // end", "");
+        let (rest, _parsed) = parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input)
+            .expect("parse_term failed");
+        assert_eq!(*rest.fragment(), " // end");
+    }
 }
