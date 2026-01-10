@@ -132,7 +132,7 @@ fn process(line: &'static str, module_tree: &ModuleTree) -> Result<(), Box<dyn s
         space0,
     ))
     .parse(Span::new_extra(line, line))
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| Error::ParseError(e).to_string())?; // For the parse error to point to the line better, we would need to know prompt length
 
     let env = module_tree.env()?;
     let aliases = module_tree.type_alias_env()?;
