@@ -7,7 +7,7 @@ use nom::{
     bytes::complete::{tag, take_while, take_while_m_n},
     character::{
         anychar,
-        complete::{alpha1, char as character, digit1},
+        complete::{alpha1, char as character, digit1, space0},
     },
     combinator::{consumed, cut, fail, opt, value, verify},
     error::{ContextError, ParseError},
@@ -313,7 +313,7 @@ fn parse_tabs<
             parse_type_variable_name,
             ws0_max1_nl,
             opt((character(':'), ws0_max1_nl, parse_sort, ws0_max1_nl)),
-            cut((character(','), ws0_max1_nl, |input| {
+            cut((character(','), ws0_max1_nl_comments, |input| {
                 parse_term(syntaxes, input)
             })),
         )
@@ -341,7 +341,7 @@ fn parse_paren<
 ) -> IResult<Span<'a>, SpannedToken<'a>, E> {
     delimited(
         character('('),
-        ws0(|input| parse_term(syntaxes, input)),
+        ws0_comments(|input| parse_term(syntaxes, input)),
         character(')'),
     )
     .parse(input)
@@ -512,9 +512,9 @@ fn parse_pair<
         delimited(
             character('('),
             (
-                ws0(|input| parse_term(syntaxes, input)),
+                ws0_comments(|input| parse_term(syntaxes, input)),
                 character(','),
-                cut(ws0(|input| parse_term(syntaxes, input))),
+                cut(ws0_comments(|input| parse_term(syntaxes, input))),
             ),
             character(')'),
         )
@@ -541,7 +541,9 @@ fn parse_fst_snd<
         position, // TODO is this correct
         (
             alt((tag("fst"), tag("snd"))),
-            cut((ws1_max1_nl, |input| parse_term_primary(syntaxes, input))),
+            cut((ws1_max1_nl_comments, |input| {
+                parse_term_primary(syntaxes, input)
+            })),
         )
             .map(|(op, (_, t))| match op.as_ref() {
                 "fst" => Fst(t.into()),
@@ -670,7 +672,7 @@ fn parse_list<
         separated_list0(ws0_comments(character(',')), |input| {
             parse_term(syntaxes, input)
         }),
-        ws0(character(':')),
+        delimited(space0, character(':'), space0),
         cut((parse_type, ws0_max1_nl, character(']'))),
     )
         .map(|(pos, _, _, terms, _, (ty, _, _))| {
@@ -710,7 +712,7 @@ fn parse_lcase<
         tag("nil"),
         ws0_max1_nl,
         tag("=>"),
-        ws0_max1_nl,
+        ws0_max1_nl_comments,
         |input| parse_term(syntaxes, input),
     )
         .map(|(_, _, _, _, _, _, t)| t);
@@ -724,7 +726,7 @@ fn parse_lcase<
         parse_variable_name_special,
         ws0_max1_nl,
         tag("=>"),
-        ws0_max1_nl,
+        ws0_max1_nl_comments,
         |input| parse_term(syntaxes, input),
     )
         .map(|(_, _, _, _, head_var, _, tail_var, _, _, _, cons_t)| (head_var, tail_var, cons_t));
@@ -813,7 +815,7 @@ fn parse_case<
         parse_variable_name_special,
         ws0_max1_nl,
         tag("=>"),
-        ws0_max1_nl,
+        ws0_max1_nl_comments,
         |input| parse_term(syntaxes, input),
     )
         .map(|(_, _, _, _, inl_var, _, _, _, inl_t)| (inl_var, inl_t));
@@ -825,7 +827,7 @@ fn parse_case<
         parse_variable_name_special,
         ws0_max1_nl,
         tag("=>"),
-        ws0_max1_nl,
+        ws0_max1_nl_comments,
         |input| parse_term(syntaxes, input),
     )
         .map(|(_, _, _, _, inr_var, _, _, _, inr_t)| (inr_var, inr_t));
@@ -880,11 +882,11 @@ fn parse_let<
                 parse_variable_name_special,
                 ws0_max1_nl,
                 tag("="),
-                ws0_max1_nl,
+                ws0_max1_nl_comments,
                 |input| parse_term(syntaxes, input),
                 ws1_max1_nl,
                 tag("in"),
-                ws1_max1_nl,
+                ws1_max1_nl_comments,
                 |input| parse_term(syntaxes, input),
             )),
         )
@@ -915,7 +917,9 @@ fn parse_fix<
         position,
         (
             tag("fix"),
-            cut((ws1_max1_nl, |input| parse_term_primary(syntaxes, input))),
+            cut((ws1_max1_nl_comments, |input| {
+                parse_term_primary(syntaxes, input)
+            })),
         )
             .map(|(_, (_, t))| Fix(Box::new(t))),
     )
@@ -940,7 +944,7 @@ fn parse_panic<
         position,
         (
             tag("panic"),
-            cut((ws1_max1_nl, parse_type, ws1_max1_nl, |input| {
+            cut((ws1_max1_nl, parse_type, ws1_max1_nl_comments, |input| {
                 parse_term(syntaxes, input)
             })),
         )
@@ -967,7 +971,9 @@ fn parse_print<
         position,
         (
             tag("__print"),
-            cut((ws1_max1_nl, |input| parse_term_primary(syntaxes, input))),
+            cut((ws1_max1_nl_comments, |input| {
+                parse_term_primary(syntaxes, input)
+            })),
         )
             .map(|(_, (_, term))| Print(Box::new(term))),
     )
@@ -1009,9 +1015,12 @@ fn parse_pure<
         position,
         (
             tag("__pure"),
-            cut((ws1_max1_nl, parse_type_primary, ws1_max1_nl, |input| {
-                parse_term_primary(syntaxes, input)
-            })),
+            cut((
+                ws1_max1_nl,
+                parse_type_primary,
+                ws1_max1_nl_comments,
+                |input| parse_term_primary(syntaxes, input),
+            )),
         )
             .map(|(_, (_, ty, _, term))| IOPure(ty, Box::new(term))),
     )
@@ -1041,9 +1050,9 @@ fn parse_bind<
                 parse_type_primary,
                 ws1_max1_nl,
                 parse_type_primary,
-                ws1_max1_nl,
+                ws1_max1_nl_comments,
                 |input| parse_term_primary(syntaxes, input),
-                ws1_max1_nl,
+                ws1_max1_nl_comments,
                 |input| parse_term_primary(syntaxes, input),
             )),
         )
@@ -1075,7 +1084,7 @@ fn parse_trace<
         position,
         (
             tag("trace"),
-            cut((ws1_max1_nl, parse_usize, ws1_max1_nl, |input| {
+            cut((ws1_max1_nl, parse_usize, ws1_max1_nl_comments, |input| {
                 parse_term(syntaxes, input)
             })),
         )

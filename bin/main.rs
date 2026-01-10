@@ -1,8 +1,10 @@
 use nom::Parser;
+use nom::character::complete::space0;
 use nom::combinator::all_consuming;
+use nom::sequence::delimited;
 use stlcpp::errors::Error;
 use stlcpp::module::{Import, ModuleTree};
-use stlcpp::parse::{Span, ws0};
+use stlcpp::parse::Span;
 use stlcpp::term::Term;
 use stlcpp::term::parse::parse_term;
 use stlcpp::term::tokens::{Desugared, SpannedToken};
@@ -124,9 +126,11 @@ fn process(line: &'static str, module_tree: &ModuleTree) -> Result<(), Box<dyn s
         (false, line)
     };
 
-    let (_, body) = all_consuming(ws0(|input| {
-        parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input)
-    }))
+    let (_, body) = all_consuming(delimited(
+        space0,
+        |input| parse_term::<nom_language::error::VerboseError<_>>(&syntaxes, input),
+        space0,
+    ))
     .parse(Span::new_extra(line, line))
     .map_err(|e| e.to_string())?;
 

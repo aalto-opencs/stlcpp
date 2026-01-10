@@ -97,11 +97,11 @@ fn parse_forall_type<
         (
             tag("forall"),
             cut((
-                ws1_max1_nl,
+                ws1_max1_nl_comments,
                 parse_type_variable_name,
-                ws0_max1_nl,
+                ws0_max1_nl_comments,
                 character(','),
-                ws0_max1_nl,
+                ws0_max1_nl_comments,
                 parse_type,
             )),
         )
@@ -121,7 +121,7 @@ fn parse_paren_type<
     input: Span<'a>,
 ) -> IResult<Span<'a>, SpannedToken<'a>, E> {
     // Can't add a cut here because it's not unique with prod
-    delimited(char('('), ws0(parse_type), char(')')).parse(input)
+    delimited(char('('), ws0_comments(parse_type), char(')')).parse(input)
 }
 
 fn parse_list_type<
@@ -132,7 +132,7 @@ fn parse_list_type<
 ) -> IResult<Span<'a>, SpannedToken<'a>, E> {
     (
         position,
-        (tag("List"), cut((ws1_max1_nl, parse_type_primary))) // Only base or paren allowed
+        (tag("List"), cut((ws1_max1_nl_comments, parse_type_primary))) // Only base or paren allowed
             .map(|(_, (_, ty))| List(Box::new(ty))),
     )
         .map(SpannedToken::new)
@@ -147,7 +147,7 @@ fn parse_io_type<
 ) -> IResult<Span<'a>, SpannedToken<'a>, E> {
     (
         position,
-        (tag("IO"), cut((ws1_max1_nl, parse_type_primary))) // Only base or paren allowed
+        (tag("IO"), cut((ws1_max1_nl_comments, parse_type_primary))) // Only base or paren allowed
             .map(|(_, (_, ty))| IO(Box::new(ty))),
     )
         .map(SpannedToken::new)
@@ -163,7 +163,7 @@ fn parse_list_type_brackets<
     (
         position,
         // No cut here because List syntax sugar uses the same syntax
-        ((char('['), (ws0(parse_type), char(']')))).map(|(_, (ty, _))| List(ty.into())),
+        ((char('['), (ws0_comments(parse_type), char(']')))).map(|(_, (ty, _))| List(ty.into())),
     )
         .map(SpannedToken::new)
         .parse(input)
@@ -216,8 +216,8 @@ pub fn parse_op<
         fail(),
         fail(),
         alt((
-            binary_op(30, Assoc::Left, ws0(tag("+"))),
-            binary_op(40, Assoc::Right, ws0(tag("->"))),
+            binary_op(30, Assoc::Left, ws0_comments(tag("+"))),
+            binary_op(40, Assoc::Right, ws0_comments(tag("->"))),
         )),
         parse_type_primary,
         |op: Operation<_, _, _, SpannedToken>| {
@@ -244,9 +244,9 @@ fn parse_prod_type<
         position,
         ((
             char('('),
-            ws0(parse_type),
+            ws0_comments(parse_type),
             char(','),
-            cut((ws0(parse_type), char(')'))),
+            cut((ws0_comments(parse_type), char(')'))),
         ))
             .map(|(_, ty1, _, (ty2, _))| Prod(ty1.into(), ty2.into())),
     )
@@ -292,9 +292,9 @@ pub fn parse_type<
     input: Span<'a>,
 ) -> IResult<Span<'a>, SpannedToken<'a>, E> {
     delimited(
-        many0(ws0(parse_comment)),
+        many0(ws0_comments(parse_comment)),
         alt((parse_forall_type, parse_op)),
-        many0(ws0(parse_comment)),
+        many0(ws0_comments(parse_comment)),
     )
     .parse(input)
 }

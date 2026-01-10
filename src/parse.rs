@@ -118,6 +118,7 @@ pub fn ws0_max1_nl_comments<'a, E: ParseError<Span<'a>>>(
     alt((ws1_max1_nl_comments, space0)).parse(input)
 }
 
+#[deprecated = "Use ws0_comments instead"]
 /// Wrap a parser with optional whitespace (max one newline) on both sides.
 pub fn ws0<I, F, O, E>(inner: F) -> impl Parser<I, Output = O, Error = E>
 where
@@ -130,6 +131,7 @@ where
     preceded(ws0_max1_nl, terminated(inner, ws0_max1_nl))
 }
 
+#[deprecated = "Use ws1_comments instead"]
 /// Wrap a parser with required whitespace (max one newline) on both sides.
 pub fn ws1<I, F, O, E>(inner: F) -> impl Parser<I, Output = O, Error = E>
 where

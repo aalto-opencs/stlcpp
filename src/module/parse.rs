@@ -11,6 +11,7 @@ use nom::{
     combinator::{cut, eof, opt, recognize},
     error::ParseError,
     multi::{many0, separated_list1},
+    sequence::delimited,
 };
 use nom_language::error::VerboseError;
 use nom_locate::position;
@@ -55,7 +56,7 @@ pub fn parse_import<
     input: Span<'a>,
 ) -> IResult<Span<'a>, Import, E> {
     (
-        many0(ws0(parse_comment)),
+        many0(delimited(space0, parse_comment, space0)),
         tag("import"),
         cut((space1, separated_list1(char('.'), parse_variable_name))),
     )
@@ -98,12 +99,15 @@ pub fn parse_declaration<
     (
         position,
         parse_variable_name, // If variable name parser fails then it's fatal
-        ws0(char(':')),
+        delimited(space0, char(':'), space0),
         parse_type,
         space0,
-        opt((newline, parse_variable_name, ws0(char('=')), |input| {
-            parse_term(syntaxes, input)
-        })
+        opt((
+            newline,
+            parse_variable_name,
+            delimited(space0, char('='), space0),
+            |input| parse_term(syntaxes, input),
+        )
             .map(|(_, var2, _, term)| (var2, term))),
     )
         .map(|(pos, var1, _, ty, _, def)| {
@@ -156,12 +160,12 @@ pub fn parse_type_declaration<
 ) -> IResult<Span<'a>, (String, TypeSpannedToken<'a>), E> {
     cut((
         parse_type_variable_name,
-        ws0(char(':')),
+        delimited(space0, char(':'), space0),
         parse_sort,
         space0,
         newline,
         parse_type_variable_name,
-        ws0(char('=')),
+        delimited(space0, char('='), space0),
         parse_type,
     ))
     .map(|(name1, _, _, _, _, name2, _, ty)| {
