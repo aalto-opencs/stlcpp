@@ -42,39 +42,6 @@ Answer: Types are De Bruijn indexed but retain human-readable names in order to 
 int.to_bool :: Int -> Bool
 ```
 
-## Known issues
-
-- Parser is not very robust
-    - declarations must be separated by exactly one empty line
-
-## Adding cuts
-
-For example, the following error when parsing `cons`
-
-```
-examples/simple.stlc λ sum (cons 1 nil Integer)
-Parsing Error: Base { location: " (cons 1 nil Integer)", kind: Expected(Eof) }
-```
-
-is improved if we add the following `cut`:
-
-```
-tag("cons"), // If we see a cons but fail parsing the following, it's unrecoverable
-cut((
-    multispace1,
-    parse_term_primary,
-    multispace1,
-    parse_term_primary,
-)),
-```
-
-Now the error is
-
-```
-examples/simple.stlc λ sum (cons 1 nil Integer)
-Parsing Failure: Stack { base: Alt([Base { location: "nil Integer)", kind: Expected(Char('(')) }, Base { location: "nil Integer)", kind: Kind(Verify) }, Base { location: "nil Integer)", kind: Expected(Digit) }, Base { location: "nil Integer)", kind: Kind(Tag) }, Base { location: "nil Integer)", kind: Kind(Tag) }, Base { location: "nil Integer)", kind: Expected(Char('(')) }, Base { location: "nil Integer)", kind: Expected(Char('\'')) }, Base { location: "nil Integer)", kind: Expected(Char('"')) }]), contexts: [("cons 1 nil Integer)", Context("parse_term")), ("sum (cons 1 nil Integer)", Context("parse_term"))] }
-```
-
 ## Concrete example why context must not have type shadowing
 
 ```

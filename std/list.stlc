@@ -65,9 +65,6 @@ concat = fun T, fun xs : [T], fun ys : [T],
     | nil => ys
     | cons x xs => x :: concat T xs ys
 
-// Syntax for concatenation
-infixr xs ++ ys = fun X, concat X xs ys
-
 // Reverse a list
 reverse : forall T, [T] -> [T]
 reverse = fun T, fun xs : [T],
@@ -80,7 +77,7 @@ map : forall A, forall B, (A -> B) -> [A] -> [B]
 map = fun A, fun B, fun f : A -> B, fun xs : [A],
     lcase xs of
     | nil => nil B
-    | cons x xs => (f x) :: map A B f xs
+    | cons x xs => f x :: map A B f xs
 
 // Fold a list (aka. foldl)
 fold : forall A, forall B, (A -> B -> A) -> A -> [B] -> A
