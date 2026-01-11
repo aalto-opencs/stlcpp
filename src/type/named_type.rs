@@ -32,12 +32,14 @@ impl NamedType {
     pub fn needs_parens_arrow(&self) -> bool {
         matches!(self, Arrow(..) | Abs { .. })
     }
-    /// When the main connective is a product, arrows, foralls and sums need parens
-    pub fn needs_parens_prod(&self) -> bool {
-        matches!(self, Arrow(..) | Abs { .. } | Sum { .. })
-    }
+
     pub fn needs_parens_sum(&self) -> bool {
         matches!(self, Arrow(..) | Abs { .. } | Sum { .. })
+    }
+
+    /// When there is a type constructor like `List T` or `IO T`, do we need parens around `T`.
+    pub fn needs_parens_constructor(&self) -> bool {
+        matches!(self, Arrow(..) | Abs { .. } | Sum { .. } | IO(..))
     }
 
     /// Calculates the maximum De Bruijn index of a free variable in the type.

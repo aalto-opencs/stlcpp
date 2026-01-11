@@ -88,34 +88,13 @@ impl NamedType {
                     ty2.fmt_ctx(f, ctx)
                 }
             },
-            Prod(ty1, ty2) => match (&**ty1, &**ty2) {
-                (ty1, ty2) if ty1.needs_parens_prod() && ty2.needs_parens_prod() => {
-                    write!(f, "(")?;
-                    ty1.fmt_ctx(f, ctx.clone())?;
-                    write!(f, ") × (")?;
-                    ty2.fmt_ctx(f, ctx)?;
-                    write!(f, ")")
-                }
-                (ty1, ty2) if ty1.needs_parens_prod() => {
-                    write!(f, "(")?;
-                    ty1.fmt_ctx(f, ctx.clone())?;
-                    write!(f, ") × ")?;
-                    ty2.fmt_ctx(f, ctx)
-                }
-                (ty1, ty2) if ty2.needs_parens_prod() || matches!(ty2, Prod { .. }) => {
-                    // Prod associates left
-                    ty1.fmt_ctx(f, ctx.clone())?;
-                    write!(f, " × (")?;
-                    ty2.fmt_ctx(f, ctx)?;
-                    write!(f, ")")
-                }
-                // Otherwise no parens
-                _ => {
-                    ty1.fmt_ctx(f, ctx.clone())?;
-                    write!(f, " × ")?;
-                    ty2.fmt_ctx(f, ctx)
-                }
-            },
+            Prod(ty1, ty2) => {
+                write!(f, "(")?;
+                ty1.fmt_ctx(f, ctx.clone())?;
+                write!(f, ", ")?;
+                ty2.fmt_ctx(f, ctx)?;
+                write!(f, ")")
+            }
             List(ty) => {
                 write!(f, "[")?;
                 ty.fmt_ctx(f, ctx)?;
@@ -151,9 +130,14 @@ impl NamedType {
             },
             Hole => write!(f, "_"),
             IO(ty) => {
-                write!(f, "IO (")?;
-                ty.fmt_ctx(f, ctx)?;
-                write!(f, ")")
+                write!(f, "IO ")?;
+                if ty.needs_parens_constructor() {
+                    write!(f, "(")?;
+                    ty.fmt_ctx(f, ctx)?;
+                    write!(f, ")")
+                } else {
+                    ty.fmt_ctx(f, ctx)
+                }
             }
         }
     }
