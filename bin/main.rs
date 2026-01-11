@@ -71,7 +71,7 @@ fn process_special(
                 .unwrap_or_default()
                 .min(20);
             for (name, (_, ty)) in env {
-                println!("{name:>width$} :: {ty}");
+                println!("{name:>width$} : {ty}");
             }
         }
         ":alias" => {
