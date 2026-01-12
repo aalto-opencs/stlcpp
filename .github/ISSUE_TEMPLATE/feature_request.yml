@@ -1,0 +1,67 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your feature suggestion!
+
+        **Students:** If you're a student, please remember to contact us directly (on Slack, etc.) for a small prize!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Is it related to a frustration?
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you'd like this feature to work.
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example Usage
+      description: If applicable, show how the feature would be used.
+      placeholder: |
+        ```stlcpp
+        -- example code showing how the feature would work
+        ```
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which area of the project does this affect?
+      options:
+        - Language Features
+        - Type System
+        - Syntax Extensions
+        - Module System
+        - REPL
+        - Web Playground
+        - Documentation
+        - Tooling
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context, references, or screenshots.

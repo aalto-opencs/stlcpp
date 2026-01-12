@@ -1,0 +1,80 @@
+name: Bug Report
+description: Report a bug in STLC++
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+
+        **Students:** If you're a student, please remember to contact us directly (on Slack, etc.) for a small prize!
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug.
+      placeholder: Describe what went wrong...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal code or steps to reproduce the issue.
+      placeholder: |
+        1. Create a file with the following code:
+        ```stlcpp
+        -- your code here
+        ```
+        2. Run `cargo run -- file.stlc`
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the system is affected?
+      options:
+        - Parser
+        - Type Checker
+        - Evaluator
+        - Module System
+        - Standard Library
+        - REPL
+        - Web Playground
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Git commit hash or version
+      placeholder: e.g., 0143f77 or main branch
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information (error messages, screenshots, etc.)
