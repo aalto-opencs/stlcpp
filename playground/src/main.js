@@ -305,11 +305,24 @@ async function main() {
   runBtn.addEventListener('click', () => {
     const code = editor.getValue();
     output.textContent = 'Running...\\n';
+
+    // Capture stderr (console.error) during execution
+    const stderrLines = [];
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+      stderrLines.push(args.map(a => String(a)).join(' '));
+      originalConsoleError.apply(console, args);
+    };
+
     try {
       const result = run(code);
-      output.textContent = result;
+      const stderr = stderrLines.join('\n');
+      output.textContent = stderr ? stderr + '\n' + result : result;
     } catch (e) {
-      output.textContent = `Error: ${e}`;
+      const stderr = stderrLines.join('\n');
+      output.textContent = stderr ? stderr + '\n' + `Error: ${e}` : `Error: ${e}`;
+    } finally {
+      console.error = originalConsoleError;
     }
   });
 

@@ -9,6 +9,27 @@ pub mod util;
 pub mod vfs;
 pub mod wasm;
 
+#[cfg(target_arch = "wasm32")]
+mod wasm_console {
+    use wasm_bindgen::prelude::*;
+
+    #[wasm_bindgen]
+    extern "C" {
+        #[wasm_bindgen(js_namespace = console)]
+        pub fn error(s: &str);
+    }
+}
+
+#[macro_export]
+macro_rules! stlcpp_stderr {
+    ($($arg:tt)*) => {{
+        #[cfg(target_arch = "wasm32")]
+        $crate::wasm_console::error(&format!($($arg)*));
+        #[cfg(not(target_arch = "wasm32"))]
+        eprintln!($($arg)*);
+    }};
+}
+
 pub static RESERVED_KEYWORDS: [&str; 46] = [
     "fun",
     "forall",

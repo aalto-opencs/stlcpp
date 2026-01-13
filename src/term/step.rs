@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::r#type::named_type::NamedType;
+use crate::stlcpp_stderr;
 
 use super::Term::{self, *};
 
@@ -93,7 +94,7 @@ fn eval_div(t1: Box<Term>, t2: Box<Term>) -> Term {
     if let (Int(n1), Int(n2)) = (t1.as_ref(), t2.as_ref()) {
         use num_bigint::BigInt;
         if *n2 == BigInt::from(0) {
-            eprintln!("*** STLC++ PANIC: division by zero");
+            stlcpp_stderr!("*** STLC++ PANIC: division by zero");
             Panic(true, NamedType::Integer, Box::new(Int(n1.clone())))
         } else {
             Int(n1 / n2)
@@ -332,7 +333,7 @@ impl Term {
             Panic(false, ty, term) => step_op1(
                 |t| Panic(false, ty.clone(), t),
                 |t| {
-                    eprintln!("*** STLC++ PANIC: {}", t);
+                    stlcpp_stderr!("*** STLC++ PANIC: {}", t);
                     Panic(true, ty.clone(), t)
                 },
                 term,
@@ -341,7 +342,7 @@ impl Term {
 
             Trace(i, term) => {
                 if i == 0 || term.is_value() {
-                    eprintln!("*** STLC++ TRACE: {term}");
+                    stlcpp_stderr!("*** STLC++ TRACE: {term}");
                     *term
                 } else {
                     Trace(i - 1, Box::new(term.step(env)))
