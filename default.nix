@@ -70,9 +70,9 @@ rec {
   };
 
   packages.run-playground = pkgs.writeShellScriptBin "run-playground" ''
-    echo "Serving STLC++ playground from ${packages.playground}..."
+    echo "Serving STLC++ playground..."
     echo "Open http://localhost:8000 in your browser"
-    ${pkgs.python3}/bin/python3 -m http.server 8000 -d ${packages.playground}
+    ${pkgs.python3}/bin/python3 -m http.server 8000 -d ${packages.playground.overrideAttrs { VITE_BASE_PATH = "/"; }}
   '';
 
   package = packages.stlcpp;

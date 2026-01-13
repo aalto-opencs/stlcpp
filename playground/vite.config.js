@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import wasm from 'vite-plugin-wasm';
 
-export default defineConfig({
-  base: '/stlcpp/',
+export default defineConfig(({ mode }) => ({
+  base: process.env.VITE_BASE_PATH ?? (mode === 'production' ? '/stlcpp/' : '/'),
   plugins: [wasm()],
   server: {
     port: 8000,
@@ -28,4 +28,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['web-tree-sitter'],
   },
-});
+}));
