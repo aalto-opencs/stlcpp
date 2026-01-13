@@ -1,0 +1,10 @@
+unwrap' : Unit + Int -> Int
+unwrap' = fun opt : Unit + Int, case opt of
+    | inr n => n
+    | inl _ => panic Int "failed to unwrap"
+
+head_or_zero : [Int] -> Int
+head_or_zero = fun ls : [Int],
+  lcase ls of
+    | cons x _ => x
+    | nil => 0

@@ -706,30 +706,70 @@ fn parse_lcase<
     syntaxes: &'b Syntaxes,
     input: Span<'a>,
 ) -> IResult<Span<'a>, SpannedToken<'a>, E> {
-    let arm_nil = (
-        tag("|"),
+    // Build both arm patterns inline in the two possible orders to allow either order.
+    let nil_then_cons = (
+        (
+            tag("|"),
+            ws0_max1_nl,
+            tag("nil"),
+            ws0_max1_nl,
+            tag("=>"),
+            ws0_max1_nl_comments,
+            |input| parse_term(syntaxes, input),
+        )
+            .map(|(_, _, _, _, _, _, t)| t),
         ws0_max1_nl,
-        tag("nil"),
-        ws0_max1_nl,
-        tag("=>"),
-        ws0_max1_nl_comments,
-        |input| parse_term(syntaxes, input),
+        (
+            tag("|"),
+            ws0_max1_nl,
+            tag("cons"),
+            ws1_max1_nl,
+            parse_variable_name_special,
+            ws1_max1_nl,
+            parse_variable_name_special,
+            ws0_max1_nl,
+            tag("=>"),
+            ws0_max1_nl_comments,
+            |input| parse_term(syntaxes, input),
+        )
+            .map(|(_, _, _, _, head_var, _, tail_var, _, _, _, cons_t)| {
+                (head_var, tail_var, cons_t)
+            }),
     )
-        .map(|(_, _, _, _, _, _, t)| t);
-    let arm_cons = (
-        tag("|"),
+        .map(|(nil_t, _, (head_var, tail_var, cons_t))| (nil_t, head_var, tail_var, cons_t));
+
+    let cons_then_nil = (
+        (
+            tag("|"),
+            ws0_max1_nl,
+            tag("cons"),
+            ws1_max1_nl,
+            parse_variable_name_special,
+            ws1_max1_nl,
+            parse_variable_name_special,
+            ws0_max1_nl,
+            tag("=>"),
+            ws0_max1_nl_comments,
+            |input| parse_term(syntaxes, input),
+        )
+            .map(|(_, _, _, _, head_var, _, tail_var, _, _, _, cons_t)| {
+                (head_var, tail_var, cons_t)
+            }),
         ws0_max1_nl,
-        tag("cons"),
-        ws1_max1_nl,
-        parse_variable_name_special,
-        ws1_max1_nl,
-        parse_variable_name_special,
-        ws0_max1_nl,
-        tag("=>"),
-        ws0_max1_nl_comments,
-        |input| parse_term(syntaxes, input),
+        (
+            tag("|"),
+            ws0_max1_nl,
+            tag("nil"),
+            ws0_max1_nl,
+            tag("=>"),
+            ws0_max1_nl_comments,
+            |input| parse_term(syntaxes, input),
+        )
+            .map(|(_, _, _, _, _, _, t)| t),
     )
-        .map(|(_, _, _, _, head_var, _, tail_var, _, _, _, cons_t)| (head_var, tail_var, cons_t));
+        .map(|((head_var, tail_var, cons_t), _, nil_t)| (nil_t, head_var, tail_var, cons_t));
+
+    let arms = alt((nil_then_cons, cons_then_nil));
 
     (
         position,
@@ -741,13 +781,11 @@ fn parse_lcase<
                 ws1_max1_nl,
                 tag("of"),
                 ws0_max1_nl,
-                arm_nil,
-                ws0_max1_nl,
-                arm_cons,
+                arms,
             )),
         )
             .map(
-                |(_, (_, t, _, _, _, nil_t, _, (head_var, tail_var, cons_t)))| LCase {
+                |(_, (_, t, _, _, _, (nil_t, head_var, tail_var, cons_t)))| LCase {
                     t: t.into(),
                     nil_t: nil_t.into(),
                     head_var,
@@ -807,30 +845,67 @@ fn parse_case<
     syntaxes: &'b Syntaxes,
     input: Span<'a>,
 ) -> IResult<Span<'a>, SpannedToken<'a>, E> {
-    let arm_l = (
-        tag("|"),
+    // Build both arm orders inline to allow either ordering: inl then inr, or inr then inl.
+    let inl_then_inr = (
+        (
+            tag("|"),
+            ws0_max1_nl,
+            tag("inl"),
+            ws1_max1_nl,
+            parse_variable_name_special,
+            ws0_max1_nl,
+            tag("=>"),
+            ws0_max1_nl_comments,
+            |input| parse_term(syntaxes, input),
+        )
+            .map(|(_, _, _, _, inl_var, _, _, _, inl_t)| (inl_var, inl_t)),
         ws0_max1_nl,
-        tag("inl"),
-        ws1_max1_nl,
-        parse_variable_name_special,
-        ws0_max1_nl,
-        tag("=>"),
-        ws0_max1_nl_comments,
-        |input| parse_term(syntaxes, input),
+        (
+            tag("|"),
+            ws0_max1_nl,
+            tag("inr"),
+            ws1_max1_nl,
+            parse_variable_name_special,
+            ws0_max1_nl,
+            tag("=>"),
+            ws0_max1_nl_comments,
+            |input| parse_term(syntaxes, input),
+        )
+            .map(|(_, _, _, _, inr_var, _, _, _, inr_t)| (inr_var, inr_t)),
     )
-        .map(|(_, _, _, _, inl_var, _, _, _, inl_t)| (inl_var, inl_t));
-    let arm_r = (
-        tag("|"),
+        .map(|(l, _, r)| (l, r));
+
+    let inr_then_inl = (
+        (
+            tag("|"),
+            ws0_max1_nl,
+            tag("inr"),
+            ws1_max1_nl,
+            parse_variable_name_special,
+            ws0_max1_nl,
+            tag("=>"),
+            ws0_max1_nl_comments,
+            |input| parse_term(syntaxes, input),
+        )
+            .map(|(_, _, _, _, inr_var, _, _, _, inr_t)| (inr_var, inr_t)),
         ws0_max1_nl,
-        tag("inr"),
-        ws1_max1_nl,
-        parse_variable_name_special,
-        ws0_max1_nl,
-        tag("=>"),
-        ws0_max1_nl_comments,
-        |input| parse_term(syntaxes, input),
+        (
+            tag("|"),
+            ws0_max1_nl,
+            tag("inl"),
+            ws1_max1_nl,
+            parse_variable_name_special,
+            ws0_max1_nl,
+            tag("=>"),
+            ws0_max1_nl_comments,
+            |input| parse_term(syntaxes, input),
+        )
+            .map(|(_, _, _, _, inl_var, _, _, _, inl_t)| (inl_var, inl_t)),
     )
-        .map(|(_, _, _, _, inr_var, _, _, _, inr_t)| (inr_var, inr_t));
+        .map(|(a, _, b)| (b, a)); // return (inl, inr)
+
+    let arms = alt((inl_then_inr, inr_then_inl));
+
     (
         position,
         (
@@ -841,13 +916,11 @@ fn parse_case<
                 ws1_max1_nl,
                 tag("of"),
                 ws0_max1_nl,
-                arm_l,
-                ws0_max1_nl,
-                arm_r,
+                arms,
             )),
         )
             .map(
-                |(_, (_, t, _, _, _, (inl_var, inl_t), _, (inr_var, inr_t)))| Case {
+                |(_, (_, t, _, _, _, ((inl_var, inl_t), (inr_var, inr_t))))| Case {
                     t: t.into(),
                     inl_var,
                     inl_t: inl_t.into(),
