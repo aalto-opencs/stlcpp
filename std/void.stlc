@@ -3,11 +3,8 @@ import aliases
 Void : Type
 Void = forall X, X
 
-error : String -> Void
-error = fun msg : String, panic Void msg
-
 undefined : Void
-undefined = error "undefined encountered"
+undefined = panic Void "undefined encountered"
 
 todo : Void
-todo = error "todo encountered"
+todo = panic Void "todo encountered"
