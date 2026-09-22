@@ -107,7 +107,3 @@ wasm-pack build --target web
 ```
 python playground/server.py
 ```
-
-## License
-
-MIT, Copyright (c) 2026 Aalto University. See [LICENSE](LICENSE).
