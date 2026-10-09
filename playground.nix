@@ -11,7 +11,7 @@ pkgs.buildNpmPackage {
 
   src = ./playground;
 
-  npmDepsHash = "sha256-gSP3f9loTPkeYK3l0Q1d28QXhujErE19k92flsh7EzA=";
+  npmDepsHash = "sha256-+Nyy05KFyLF2T9LtjgJ+KmrnICTXi1ylP4GFNbe8C64=";
 
   nativeBuildInputs = [
     pkgs.wasm-bindgen-cli
