@@ -13,7 +13,7 @@
     "web-tree-sitter": "^0.24.7"
   },
   "devDependencies": {
-    "vite": "^6.0.5",
+    "vite": "^6.4.3",
     "vite-plugin-wasm": "^3.3.0"
   }
 }
