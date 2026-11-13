@@ -1,0 +1,57 @@
+{
+  "baseBranch": "main",
+  "coursePaths": [
+    "materials",
+    "assignment-repository",
+    "opencs-materials",
+    "opencs-assignment-repository",
+    "test-opencs-materials",
+    "test-opencs-assignment-repository"
+  ],
+  "dependencyFiles": {
+    "Cargo.toml": [
+      ".github/workflows/test.yml"
+    ],
+    "Cargo.lock": [
+      ".github/workflows/test.yml"
+    ],
+    "playground/package.json": [
+      ".github/workflows/test.yml",
+      ".github/workflows/playground-dependencies.yml"
+    ],
+    "playground/package-lock.json": [
+      ".github/workflows/test.yml",
+      ".github/workflows/playground-dependencies.yml"
+    ]
+  },
+  "actionWorkflows": {
+    ".github/workflows/playground-dependencies.yml": [
+      ".github/workflows/test.yml",
+      ".github/workflows/playground-dependencies.yml"
+    ],
+    ".github/workflows/publish.yml": [
+      ".github/workflows/test.yml"
+    ],
+    ".github/workflows/pages.yml": [
+      ".github/workflows/test.yml"
+    ],
+    ".github/workflows/test.yml": [
+      ".github/workflows/test.yml"
+    ],
+    ".github/workflows/dependabot-policy.yml": [
+      ".github/workflows/test.yml"
+    ],
+    ".github/workflows/dependabot-automerge.yml": [
+      ".github/workflows/test.yml"
+    ]
+  },
+  "workflows": {
+    ".github/workflows/test.yml": [
+      "^run-tests$"
+    ],
+    ".github/workflows/playground-dependencies.yml": [
+      "^contracts$",
+      "^production-build$"
+    ]
+  }
+}
