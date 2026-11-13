@@ -1,0 +1,37 @@
+name: Merge tested Dependabot updates
+on:
+  workflow_run:
+    workflows: ["Dependabot policy tests", "CodeQL", "Copilot code review", "Security Risk Assessment", "Deploy Playground to Pages", "Playground dependency contracts", "Build and Push stlcpp Docker Image", "Run tests"]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: dependabot-automerge-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: false
+jobs:
+  merge:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.event == 'pull_request' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       startsWith(github.event.workflow_run.head_branch, 'dependabot/'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+      checks: read
+      statuses: read
+    steps:
+      # Execute only immutable default-branch code. Never use PR code,
+      # dependencies, caches, or artifacts in this privileged workflow.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Recheck dependency scope, build/tests and exact revisions, then merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/dependabot.mjs merge
